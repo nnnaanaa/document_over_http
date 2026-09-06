@@ -252,15 +252,51 @@ a:hover { color: var(--accent-hover); }
   line-height: 1.75;
 }
 
-.site-footer {
+.doc-pager {
   max-width: 860px;
   margin: 3rem auto 0;
+  padding-top: 1.25rem;
+  border-top: 1px solid var(--border);
+  display: flex;
+  gap: 1rem;
+}
+.doc-pager[hidden] { display: none; }
+.pager-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+  max-width: 48%;
+  padding: 0.7rem 0.9rem;
+  border-radius: var(--radius);
+  text-decoration: none;
+  transition: background-color 0.15s ease;
+}
+.pager-link:hover { background: var(--active-bg); }
+.pager-prev { text-align: left; }
+.pager-next { text-align: right; margin-left: auto; }
+.pager-label {
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--text-muted);
+}
+.pager-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent);
+}
+
+.site-footer {
+  max-width: 860px;
+  margin: 2rem auto 0;
   padding-top: 1.25rem;
   border-top: 1px solid var(--border);
   color: var(--text-muted);
   font-size: 0.8rem;
   text-align: center;
 }
+.doc-pager:not([hidden]) + .site-footer { border-top: none; padding-top: 0; margin-top: 1.5rem; }
 .markdown-body .loading,
 .markdown-body .error,
 .markdown-body .empty-state {

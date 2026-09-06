@@ -2,6 +2,7 @@
   "use strict";
 
   const contentEl = document.getElementById("content");
+  const docPagerEl = document.getElementById("docPager");
   const navTreeEl = document.getElementById("navTree");
   const tocEl = document.getElementById("toc");
   const searchInput = document.getElementById("searchInput");
@@ -126,10 +127,27 @@
     return root;
   }
 
+  // README.md はタイトルが変わっても常に各階層の先頭に固定する
+  function isReadme(item) {
+    return /^readme\.md$/i.test(item.path.split("/").pop());
+  }
+
+  function sortFiles(files) {
+    return [...files].sort((a, b) => {
+      const aReadme = isReadme(a);
+      const bReadme = isReadme(b);
+      if (aReadme !== bReadme) return aReadme ? -1 : 1;
+      return a.title.localeCompare(b.title, "ja");
+    });
+  }
+
+  function sortedDirEntries(node) {
+    return [...node.dirs.entries()].sort((a, b) => a[0].localeCompare(b[0], "ja"));
+  }
+
   function renderNode(node, container) {
     const ul = document.createElement("ul");
-    const sortedDirs = [...node.dirs.entries()].sort((a, b) => a[0].localeCompare(b[0], "ja"));
-    for (const [name, child] of sortedDirs) {
+    for (const [name, child] of sortedDirEntries(node)) {
       const li = document.createElement("li");
       const details = document.createElement("details");
       details.open = true;
@@ -141,15 +159,7 @@
       li.appendChild(details);
       ul.appendChild(li);
     }
-    // README.md はタイトルが変わっても常に各階層の先頭に固定する
-    const isReadme = (item) => /^readme\.md$/i.test(item.path.split("/").pop());
-    const sortedFiles = [...node.files].sort((a, b) => {
-      const aReadme = isReadme(a);
-      const bReadme = isReadme(b);
-      if (aReadme !== bReadme) return aReadme ? -1 : 1;
-      return a.title.localeCompare(b.title, "ja");
-    });
-    for (const file of sortedFiles) {
+    for (const file of sortFiles(node.files)) {
       const li = document.createElement("li");
       const a = document.createElement("a");
       a.href = "#/" + file.path;
@@ -159,6 +169,15 @@
       ul.appendChild(li);
     }
     container.appendChild(ul);
+  }
+
+  // ナビゲーションと同じ順序（サブフォルダ→ファイル、README優先）でフラットな一覧を作る（前へ/次へ用）
+  function flattenOrder(node) {
+    let result = [];
+    for (const [, child] of sortedDirEntries(node)) {
+      result = result.concat(flattenOrder(child));
+    }
+    return result.concat(sortFiles(node.files));
   }
 
   function buildNavTree() {
@@ -263,16 +282,50 @@
     return sorted[0].path;
   }
 
+  function makePagerLink(item, label, className) {
+    const a = document.createElement("a");
+    a.href = "#/" + item.path;
+    a.className = "pager-link " + className;
+    const labelEl = document.createElement("span");
+    labelEl.className = "pager-label";
+    labelEl.textContent = label;
+    const titleEl = document.createElement("span");
+    titleEl.className = "pager-title";
+    titleEl.textContent = item.title;
+    a.appendChild(labelEl);
+    a.appendChild(titleEl);
+    return a;
+  }
+
+  function renderPager(path) {
+    if (!docPagerEl) return;
+    const order = flattenOrder(groupByDir(manifest));
+    const idx = order.findIndex((m) => m.path === path);
+    const prev = idx > 0 ? order[idx - 1] : null;
+    const next = idx !== -1 && idx < order.length - 1 ? order[idx + 1] : null;
+
+    docPagerEl.innerHTML = "";
+    if (!prev && !next) {
+      docPagerEl.hidden = true;
+      return;
+    }
+    docPagerEl.hidden = false;
+    docPagerEl.appendChild(prev ? makePagerLink(prev, "← 前へ", "pager-prev") : document.createElement("span"));
+    if (next) docPagerEl.appendChild(makePagerLink(next, "次へ →", "pager-next"));
+  }
+
   async function renderPath(path) {
     if (!path) {
       contentEl.innerHTML = '<p class="empty-state">左のメニューからドキュメントを選択してください。</p>';
       tocEl.innerHTML = "";
+      if (docPagerEl) docPagerEl.hidden = true;
       document.title = "Document Over HTTP";
       return;
     }
 
     contentEl.innerHTML = '<p class="loading">読み込み中…</p>';
     tocEl.innerHTML = "";
+    if (docPagerEl) docPagerEl.hidden = true;
 
     try {
       const meta = manifest.find((m) => m.path === path);
@@ -290,6 +343,7 @@
       });
 
       buildToc();
+      renderPager(path);
 
       document.title = (meta ? meta.title : path) + " – Document Over HTTP";
 

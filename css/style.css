@@ -399,6 +399,15 @@ a:hover { color: var(--accent-hover); }
     flex: 1 1 100%;
     max-width: none;
   }
+}
+
+@media (max-width: 380px) {
+  /* さらに狭い画面ではアイコン類も1段目に収まりきらないため、間隔とロゴを詰める */
+  .topbar { gap: 0.5rem; }
+  .brand { font-size: 0.9rem; }
+}
+
+@media (max-width: 700px) {
   .sidebar {
     position: fixed;
     top: var(--topbar-h, 60px);

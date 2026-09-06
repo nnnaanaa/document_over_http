@@ -141,7 +141,14 @@
       li.appendChild(details);
       ul.appendChild(li);
     }
-    const sortedFiles = [...node.files].sort((a, b) => a.title.localeCompare(b.title, "ja"));
+    // README.md はタイトルが変わっても常に各階層の先頭に固定する
+    const isReadme = (item) => /^readme\.md$/i.test(item.path.split("/").pop());
+    const sortedFiles = [...node.files].sort((a, b) => {
+      const aReadme = isReadme(a);
+      const bReadme = isReadme(b);
+      if (aReadme !== bReadme) return aReadme ? -1 : 1;
+      return a.title.localeCompare(b.title, "ja");
+    });
     for (const file of sortedFiles) {
       const li = document.createElement("li");
       const a = document.createElement("a");

@@ -254,6 +254,20 @@ a:hover { color: var(--accent-hover); }
   line-height: 1.6;
 }
 .nav-tree .hidden { display: none !important; }
+.nav-snippet {
+  margin: -0.15rem 0 0.35rem 0.7rem;
+  padding: 0 0.7rem;
+  font-size: 0.78rem;
+  line-height: 1.45;
+  color: var(--text-muted);
+  overflow-wrap: anywhere;
+}
+.nav-snippet mark {
+  background: var(--accent-soft);
+  color: var(--text);
+  border-radius: 3px;
+  padding: 0 0.15em;
+}
 
 /* Markdown body */
 .markdown-body {

@@ -202,19 +202,48 @@
   }
 
   // ---- Search ----
+  // 本文中でヒットした箇所の前後を抜粋し、一致部分を <mark> で強調したスニペットを作る
+  function addSnippet(li, text, index, queryLen) {
+    const CONTEXT_BEFORE = 20;
+    const CONTEXT_AFTER = 40;
+    const start = Math.max(0, index - CONTEXT_BEFORE);
+    const end = Math.min(text.length, index + queryLen + CONTEXT_AFTER);
+    const before = (start > 0 ? "…" : "") + text.slice(start, index).replace(/\s+/g, " ");
+    const hit = text.slice(index, index + queryLen);
+    const after = text.slice(index + queryLen, end).replace(/\s+/g, " ") + (end < text.length ? "…" : "");
+
+    const snippetEl = document.createElement("div");
+    snippetEl.className = "nav-snippet";
+    snippetEl.append(before);
+    const mark = document.createElement("mark");
+    mark.textContent = hit;
+    snippetEl.appendChild(mark);
+    snippetEl.append(after);
+    li.appendChild(snippetEl);
+  }
+
   function applySearchFilter() {
-    const q = searchInput.value.trim().toLowerCase();
+    const rawQuery = searchInput.value.trim();
+    const q = rawQuery.toLowerCase();
     const items = navTreeEl.querySelectorAll("li");
-    items.forEach((li) => li.classList.remove("hidden"));
+    items.forEach((li) => {
+      li.classList.remove("hidden");
+      const snippet = li.querySelector(".nav-snippet");
+      if (snippet) snippet.remove();
+    });
     if (!q) return;
 
     navTreeEl.querySelectorAll("a").forEach((a) => {
       const meta = manifest.find((m) => m.path === a.dataset.path);
-      const match =
-        a.textContent.toLowerCase().includes(q) ||
-        a.dataset.path.toLowerCase().includes(q) ||
-        (meta && meta.body && meta.body.includes(q));
-      a.closest("li").classList.toggle("hidden", !match);
+      const titleMatch = a.textContent.toLowerCase().includes(q);
+      const pathMatch = a.dataset.path.toLowerCase().includes(q);
+      const bodyIndex = meta && meta.body ? meta.body.toLowerCase().indexOf(q) : -1;
+      const li = a.closest("li");
+      li.classList.toggle("hidden", !(titleMatch || pathMatch || bodyIndex !== -1));
+      // タイトル/パスで既に一致箇所が見えている場合は、本文スニペットは出さない
+      if (bodyIndex !== -1 && !titleMatch && !pathMatch) {
+        addSnippet(li, meta.body, bodyIndex, rawQuery.length);
+      }
     });
     // keep parent groups visible if any child matches
     navTreeEl.querySelectorAll(".nav-group").forEach((details) => {
@@ -234,7 +263,7 @@
         try {
           const res = await fetch(item.url || item.path, { cache: "no-cache" });
           if (!res.ok) return;
-          item.body = (await res.text()).toLowerCase();
+          item.body = await res.text();
         } catch {
           /* 取得できないファイルは検索対象から外れるだけで無視する */
         }

@@ -1,6 +1,7 @@
 (() => {
   "use strict";
 
+  const topbarEl = document.querySelector(".topbar");
   const contentEl = document.getElementById("content");
   const docPagerEl = document.getElementById("docPager");
   const navTreeEl = document.getElementById("navTree");
@@ -395,9 +396,17 @@
   });
 
   // ---- Init ----
+  // モバイルではヘッダーが折り返して高さが変わるため、実測してサイドバー/オーバーレイの開始位置に反映する
+  function syncTopbarHeight() {
+    if (!topbarEl) return;
+    document.documentElement.style.setProperty("--topbar-h", topbarEl.offsetHeight + "px");
+  }
+  window.addEventListener("resize", syncTopbarHeight);
+
   function init() {
     initTheme();
     loadManifest();
+    syncTopbarHeight();
     const copyYear = document.getElementById("copyYear");
     if (copyYear) copyYear.textContent = new Date().getFullYear();
     if (!currentPath()) {

@@ -436,10 +436,9 @@ a:hover { color: var(--accent-hover); }
 }
 
 @media (max-width: 380px) {
-  /* さらに狭い画面ではアイコン類も1段目に収まりきらないため、間隔とロゴ・テーマ切替ラベルを詰める */
-  .topbar { gap: 0.35rem; }
-  .brand { font-size: 0.85rem; }
-  .theme-toggle { padding: 0 0.55rem; font-size: 0.8rem; }
+  /* さらに狭い画面ではアイコン類も1段目に収まりきらないため、間隔とロゴを詰める */
+  .topbar { gap: 0.5rem; }
+  .brand { font-size: 0.9rem; }
 }
 
 @media (max-width: 700px) {

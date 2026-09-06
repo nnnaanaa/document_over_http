@@ -33,8 +33,7 @@
 
   function initTheme() {
     const saved = localStorage.getItem("doc-viewer-theme");
-    const prefersDark = window.matchMedia("(prefers-color-scheme: dark)").matches;
-    applyTheme(saved || (prefersDark ? "dark" : "light"));
+    applyTheme(saved || "light");
   }
 
   themeToggle.addEventListener("click", () => {
@@ -203,14 +202,18 @@
   }
 
   // ---- Search ----
-  searchInput.addEventListener("input", () => {
+  function applySearchFilter() {
     const q = searchInput.value.trim().toLowerCase();
     const items = navTreeEl.querySelectorAll("li");
     items.forEach((li) => li.classList.remove("hidden"));
     if (!q) return;
 
     navTreeEl.querySelectorAll("a").forEach((a) => {
-      const match = a.textContent.toLowerCase().includes(q) || a.dataset.path.toLowerCase().includes(q);
+      const meta = manifest.find((m) => m.path === a.dataset.path);
+      const match =
+        a.textContent.toLowerCase().includes(q) ||
+        a.dataset.path.toLowerCase().includes(q) ||
+        (meta && meta.body && meta.body.includes(q));
       a.closest("li").classList.toggle("hidden", !match);
     });
     // keep parent groups visible if any child matches
@@ -221,7 +224,24 @@
       details.closest("li").classList.toggle("hidden", !anyVisible);
       if (anyVisible) details.open = true;
     });
-  });
+  }
+  searchInput.addEventListener("input", applySearchFilter);
+
+  // 本文全文検索用に、表示をブロックしないようバックグラウンドで全ドキュメントを先読みする
+  async function prefetchAllContent() {
+    await Promise.all(
+      manifest.map(async (item) => {
+        try {
+          const res = await fetch(item.url || item.path, { cache: "no-cache" });
+          if (!res.ok) return;
+          item.body = (await res.text()).toLowerCase();
+        } catch {
+          /* 取得できないファイルは検索対象から外れるだけで無視する */
+        }
+      })
+    );
+    applySearchFilter();
+  }
 
   // ---- Slug helper ----
   function slugify(text) {
@@ -298,6 +318,55 @@
     return a;
   }
 
+  async function copyToClipboard(text) {
+    try {
+      await navigator.clipboard.writeText(text);
+      return true;
+    } catch {
+      // 権限がない/非対応の環境向けのフォールバック
+      try {
+        const ta = document.createElement("textarea");
+        ta.value = text;
+        ta.style.position = "fixed";
+        ta.style.opacity = "0";
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand("copy");
+        document.body.removeChild(ta);
+        return ok;
+      } catch {
+        return false;
+      }
+    }
+  }
+
+  function addCodeCopyButtons() {
+    contentEl.querySelectorAll("pre").forEach((pre) => {
+      if (pre.querySelector(".code-copy-btn")) return;
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = "code-copy-btn";
+      btn.setAttribute("aria-label", "Copy code");
+      btn.title = "Copy code";
+      btn.innerHTML =
+        '<svg class="icon icon-copy" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="5.5" y="5.5" width="9" height="9" rx="1.5"/><path d="M3.5 10.5h-1A1.5 1.5 0 0 1 1 9V2.5A1.5 1.5 0 0 1 2.5 1H9a1.5 1.5 0 0 1 1.5 1.5v1"/></svg>' +
+        '<svg class="icon icon-check" viewBox="0 0 16 16" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 8.5 6.5 12 13 4"/></svg>';
+      btn.addEventListener("click", async () => {
+        const code = pre.querySelector("code");
+        const text = code ? code.textContent : pre.textContent;
+        if (!(await copyToClipboard(text))) return;
+        btn.classList.add("copied");
+        btn.setAttribute("aria-label", "Copied");
+        clearTimeout(btn._resetTimer);
+        btn._resetTimer = setTimeout(() => {
+          btn.classList.remove("copied");
+          btn.setAttribute("aria-label", "Copy code");
+        }, 1500);
+      });
+      pre.appendChild(btn);
+    });
+  }
+
   function renderPager(path) {
     if (!docPagerEl) return;
     const order = flattenOrder(groupByDir(manifest));
@@ -342,6 +411,7 @@
       contentEl.querySelectorAll("pre code").forEach((block) => {
         if (window.hljs) hljs.highlightElement(block);
       });
+      addCodeCopyButtons();
 
       buildToc();
       renderPager(path);
@@ -406,6 +476,7 @@
   function init() {
     initTheme();
     loadManifest();
+    prefetchAllContent();
     syncTopbarHeight();
     const copyYear = document.getElementById("copyYear");
     if (copyYear) copyYear.textContent = new Date().getFullYear();

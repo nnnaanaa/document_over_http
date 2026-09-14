@@ -17,4 +17,8 @@ window.DOC_FILES = [
     path: "subnet-cheatsheet.md",
     url: "https://raw.githubusercontent.com/nnnaanaa/document/main/subnet-cheatsheet.md",
   },
+  {
+    path: "ieee802x.md",
+    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ieee802x.md",
+  },
 ];

@@ -21,4 +21,20 @@ window.DOC_FILES = [
     path: "ieee802x.md",
     url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ieee802x.md",
   },
+  {
+    path: "poe.md",
+    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/poe.md",
+  },
+  {
+    path: "ethernet-types.md",
+    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ethernet-types.md",
+  },
+  {
+    path: "wan-vpn.md",
+    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/wan-vpn.md",
+  },
+  {
+    path: "ipsec-modes.md",
+    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ipsec-modes.md",
+  },
 ];

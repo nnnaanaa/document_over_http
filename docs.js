@@ -37,4 +37,16 @@ window.DOC_FILES = [
     path: "ipsec-modes.md",
     url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ipsec-modes.md",
   },
+  {
+    path: "dhcp.md",
+    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/dhcp.md",
+  },
+  {
+    path: "well-known-ports.md",
+    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/well-known-ports.md",
+  },
+  {
+    path: "email-header.md",
+    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/email-header.md",
+  },
 ];

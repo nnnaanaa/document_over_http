@@ -7,46 +7,26 @@
 //   2. オブジェクト { path, url }: 別リポジトリなど外部の .md ファイル
 //      （url は raw.githubusercontent.com など CORS を許可しているURLを指定する）
 //        { path: "ipaddr.md", url: "https://raw.githubusercontent.com/<owner>/<repo>/<branch>/ipaddr.md" }
+//
+// path に "フォルダ名/ファイル名.md" と書くと、左のナビゲーションがフォルダごとにまとまる。
+// 関連資料どうしの .md リンクは相対パスで解決されるため、リンクし合う資料は同じフォルダに置くこと。
+const DOC_BASE = "https://raw.githubusercontent.com/nnnaanaa/document/main/";
+const doc = (dir, file) => ({ path: dir + "/" + file, url: DOC_BASE + file });
+
 window.DOC_FILES = [
   "README.md",
-  {
-    path: "ipaddr.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ipaddr.md",
-  },
-  {
-    path: "subnet-cheatsheet.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/subnet-cheatsheet.md",
-  },
-  {
-    path: "ieee802x.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ieee802x.md",
-  },
-  {
-    path: "poe.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/poe.md",
-  },
-  {
-    path: "ethernet-types.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ethernet-types.md",
-  },
-  {
-    path: "wan-vpn.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/wan-vpn.md",
-  },
-  {
-    path: "ipsec-modes.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/ipsec-modes.md",
-  },
-  {
-    path: "dhcp.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/dhcp.md",
-  },
-  {
-    path: "well-known-ports.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/well-known-ports.md",
-  },
-  {
-    path: "email-header.md",
-    url: "https://raw.githubusercontent.com/nnnaanaa/document/main/email-header.md",
-  },
+
+  doc("IPアドレス", "ipaddr.md"),
+  doc("IPアドレス", "subnet-cheatsheet.md"),
+
+  doc("LAN・イーサネット規格", "ieee802x.md"),
+  doc("LAN・イーサネット規格", "poe.md"),
+  doc("LAN・イーサネット規格", "ethernet-types.md"),
+
+  doc("WAN・VPN", "wan-vpn.md"),
+  doc("WAN・VPN", "ipsec-modes.md"),
+
+  doc("プロトコル・ポート", "dhcp.md"),
+  doc("プロトコル・ポート", "well-known-ports.md"),
+  doc("プロトコル・ポート", "email-header.md"),
 ];

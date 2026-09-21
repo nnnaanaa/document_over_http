@@ -8,25 +8,26 @@
 //      （url は raw.githubusercontent.com など CORS を許可しているURLを指定する）
 //        { path: "ipaddr.md", url: "https://raw.githubusercontent.com/<owner>/<repo>/<branch>/ipaddr.md" }
 //
-// path に "フォルダ名/ファイル名.md" と書くと、左のナビゲーションがフォルダごとにまとまる。
+// nnnaanaa/document のファイルは doc("リポジトリ内のパス") と書けば、
+// 同じパスでナビゲーションにフォルダ構成ごと表示される（例: network/lan/poe.md）。
 // 関連資料どうしの .md リンクは相対パスで解決されるため、リンクし合う資料は同じフォルダに置くこと。
 const DOC_BASE = "https://raw.githubusercontent.com/nnnaanaa/document/main/";
-const doc = (dir, file) => ({ path: dir + "/" + file, url: DOC_BASE + file });
+const doc = (path) => ({ path, url: DOC_BASE + path });
 
 window.DOC_FILES = [
   "README.md",
 
-  doc("IPアドレス", "ipaddr.md"),
-  doc("IPアドレス", "subnet-cheatsheet.md"),
+  doc("network/ip-address/ipaddr.md"),
+  doc("network/ip-address/subnet-cheatsheet.md"),
 
-  doc("LAN・イーサネット規格", "ieee802x.md"),
-  doc("LAN・イーサネット規格", "poe.md"),
-  doc("LAN・イーサネット規格", "ethernet-types.md"),
+  doc("network/lan/ieee802x.md"),
+  doc("network/lan/poe.md"),
+  doc("network/lan/ethernet-types.md"),
 
-  doc("WAN・VPN", "wan-vpn.md"),
-  doc("WAN・VPN", "ipsec-modes.md"),
+  doc("network/wan-vpn/wan-vpn.md"),
+  doc("network/wan-vpn/ipsec-modes.md"),
 
-  doc("プロトコル・ポート", "dhcp.md"),
-  doc("プロトコル・ポート", "well-known-ports.md"),
-  doc("プロトコル・ポート", "email-header.md"),
+  doc("network/protocol/dhcp.md"),
+  doc("network/protocol/well-known-ports.md"),
+  doc("network/protocol/email-header.md"),
 ];

@@ -218,24 +218,20 @@ a:hover { color: var(--accent-hover); }
 
 .nav-tree a {
   position: relative;
-  display: block;
-  padding: 0.45rem 0.7rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+  padding: 0.4rem 0.7rem;
   margin: 0.1rem 0;
   border-radius: var(--radius);
   text-decoration: none;
   color: var(--text);
-  font-size: 0.9rem;
-  font-weight: 500;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
   transition: background-color 0.15s ease, color 0.15s ease;
 }
 .nav-tree a:hover { background: var(--active-bg); }
 .nav-tree a.active {
   background: var(--active-bg);
   color: var(--accent);
-  font-weight: 700;
 }
 .nav-tree a.active::before {
   content: "";
@@ -247,6 +243,23 @@ a:hover { color: var(--accent-hover); }
   border-radius: 2px;
   background: var(--accent);
 }
+.nav-link-title {
+  font-size: 0.9rem;
+  font-weight: 500;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-tree a.active .nav-link-title { font-weight: 700; }
+.nav-link-summary {
+  font-size: 0.74rem;
+  font-weight: 400;
+  color: var(--text-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.nav-tree a.active .nav-link-summary { color: var(--accent); opacity: 0.8; }
 .nav-tree .empty {
   color: var(--text-muted);
   font-size: 0.85rem;

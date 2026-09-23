@@ -15,7 +15,7 @@
    ];
    ```
 
-   別リポジトリの `.md` を表示したい場合は、文字列の代わりに `{ path, url }` を指定する（`url` には raw.githubusercontent.com など CORS を許可しているURLを使う）。
+   別リポジトリの `.md` を表示したい場合は、文字列の代わりに `{ path, url, summary }` を指定する（`url` には raw.githubusercontent.com など CORS を許可しているURLを使う。`summary` は任意で、ナビゲーションのタイトル下に小さく表示される一行説明）。
 
    ```js
    window.DOC_FILES = [
@@ -23,6 +23,7 @@
      {
        path: "subnet-cheatsheet.md",
        url: "https://raw.githubusercontent.com/<owner>/<repo>/<branch>/subnet-cheatsheet.md",
+       summary: "サブネット計算の公式・早見表まとめ",
      },
    ];
    ```
@@ -43,7 +44,7 @@ GitHub Pages で公開する場合は、リポジトリを push して Pages を
 
 ## 機能
 
-- 左サイドバーにフォルダ構成に沿ったナビゲーションツリーを自動生成
+- 左サイドバーにフォルダ構成に沿ったナビゲーションツリーを自動生成（`summary` を指定すればタイトル下に一行説明も表示）
 - 右側に見出しから自動生成した目次（ページ内リンク）
 - 検索ボックスでタイトル・パスを絞り込み
 - ライト / ダークテーマ切り替え（設定は保存される）

@@ -90,7 +90,13 @@
         const slash = path.lastIndexOf("/");
         const dir = slash === -1 ? "" : path.slice(0, slash);
         const base = (slash === -1 ? path : path.slice(slash + 1)).replace(/\.md$/i, "");
-        return { path, dir, title: titleCache[path] || humanize(base), url: entry.url || null };
+        return {
+          path,
+          dir,
+          title: titleCache[path] || humanize(base),
+          url: entry.url || null,
+          summary: entry.summary || "",
+        };
       });
 
     buildNavTree();
@@ -107,7 +113,8 @@
       titleCache[path] = title;
       saveTitleCache();
       const link = navTreeEl.querySelector('a[data-path="' + CSS.escape(path) + '"]');
-      if (link) link.textContent = title;
+      const titleEl = link && link.querySelector(".nav-link-title");
+      if (titleEl) titleEl.textContent = title;
     }
   }
 
@@ -163,8 +170,21 @@
       const li = document.createElement("li");
       const a = document.createElement("a");
       a.href = "#/" + file.path;
-      a.textContent = file.title;
       a.dataset.path = file.path;
+      a.title = file.summary ? file.title + " — " + file.summary : file.title;
+
+      const titleEl = document.createElement("span");
+      titleEl.className = "nav-link-title";
+      titleEl.textContent = file.title;
+      a.appendChild(titleEl);
+
+      if (file.summary) {
+        const summaryEl = document.createElement("span");
+        summaryEl.className = "nav-link-summary";
+        summaryEl.textContent = file.summary;
+        a.appendChild(summaryEl);
+      }
+
       li.appendChild(a);
       ul.appendChild(li);
     }

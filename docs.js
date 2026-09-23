@@ -23,11 +23,24 @@ window.DOC_FILES = [
   doc("network/lan/ieee802x.md"),
   doc("network/lan/poe.md"),
   doc("network/lan/ethernet-types.md"),
+  doc("network/lan/wifi.md"),
+  doc("network/lan/lag-stp.md"),
 
   doc("network/wan-vpn/wan-vpn.md"),
   doc("network/wan-vpn/ipsec-modes.md"),
 
+  doc("network/routing/igp.md"),
+  doc("network/routing/bgp.md"),
+  doc("network/routing/reliability.md"),
+
+  doc("network/redundancy/vrrp.md"),
+
   doc("network/protocol/dhcp.md"),
   doc("network/protocol/well-known-ports.md"),
   doc("network/protocol/email-header.md"),
+  doc("network/protocol/mail-security.md"),
+  doc("network/protocol/tcp.md"),
+  doc("network/protocol/udp.md"),
+  doc("network/protocol/http.md"),
+  doc("network/protocol/tls.md"),
 ];

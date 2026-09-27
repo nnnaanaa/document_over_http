@@ -247,7 +247,7 @@
     const wrap = el("div", "table-wrap");
     const table = el("table", "quiz-progress-table");
     const head = el("tr");
-    ["資料", "問題数", "正解済み", "要復習", ""].forEach((h) => head.append(el("th", null, h)));
+    ["資料", "正解済み", "要復習", ""].forEach((h) => head.append(el("th", null, h)));
     const thead = el("thead");
     thead.append(head);
     table.append(thead);
@@ -255,7 +255,7 @@
     orderedDirs().forEach((dir) => {
       const groupRow = el("tr", "quiz-group-row");
       const groupCell = el("td", null, dirLabel(dir));
-      groupCell.colSpan = 5;
+      groupCell.colSpan = 4;
       groupRow.append(groupCell);
       body.append(groupRow);
       orderedDocs()
@@ -273,7 +273,7 @@
           if (s.weak) weakCell.classList.add("quiz-cell-weak");
           const actionCell = el("td");
           actionCell.append(button("解く", "quiz-small", () => startSession({ type: "doc", value: path }, 0)));
-          row.append(titleCell, el("td", null, String(s.total)), doneCell, weakCell, actionCell);
+          row.append(titleCell, doneCell, weakCell, actionCell);
           body.append(row);
         });
     });

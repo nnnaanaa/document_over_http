@@ -693,6 +693,13 @@ a:hover { color: var(--accent-hover); }
 
 .markdown-body .quiz-progress-table td:first-child { font-weight: 500; }
 .markdown-body .quiz-progress-table td { vertical-align: middle; }
+.markdown-body .quiz-progress-table th:not(:first-child),
+.markdown-body .quiz-progress-table td:not(:first-child) {
+  width: 1%;
+  white-space: nowrap;
+  text-align: center;
+}
+.markdown-body .quiz-progress-table .quiz-group-row td { text-align: left; white-space: normal; }
 .markdown-body .quiz-group-row td {
   background: var(--th-bg) !important;
   font-size: 0.78rem;
@@ -947,7 +954,6 @@ a:hover { color: var(--accent-hover); }
 }
 
 @media (max-width: 700px) {
-  .nav-toggle { display: flex; }
   .topbar {
     flex-wrap: wrap;
     row-gap: 0.6rem;
@@ -969,6 +975,7 @@ a:hover { color: var(--accent-hover); }
   .quiz-card { padding: 1.1rem; }
   .markdown-body .quiz-question { font-size: 1.05rem; }
   .kw-card { min-height: 280px; padding: 2rem 1.25rem 1.5rem; }
+  .markdown-body .quiz-progress-table th, .markdown-body .quiz-progress-table td { padding: 0.55rem 0.6rem; }
 }
 
 @media (max-width: 380px) {
@@ -977,7 +984,9 @@ a:hover { color: var(--accent-hover); }
   .brand { font-size: 0.9rem; }
 }
 
-@media (max-width: 700px) {
+/* タブレット縦以下ではサイドバーを開閉式にして本文の幅を確保する */
+@media (max-width: 900px) {
+  .nav-toggle { display: flex; }
   .sidebar {
     position: fixed;
     top: var(--topbar-h, 60px);
@@ -996,4 +1005,9 @@ a:hover { color: var(--accent-hover); }
     background: rgba(15, 17, 21, 0.4);
     z-index: 25;
   }
+}
+
+/* タッチ操作の端末ではキーボード操作の案内は不要 */
+@media (hover: none) and (pointer: coarse) {
+  .markdown-body .quiz-hint { display: none; }
 }

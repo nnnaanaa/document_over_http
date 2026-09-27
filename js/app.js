@@ -647,8 +647,10 @@
     location.hash = "/" + resolved;
   });
 
-  navTreeEl.addEventListener("click", (e) => {
-    if (window.innerWidth <= 700) closeNav();
+  // 開閉式のサイドバーでは、リンクを選んだら閉じる（フォルダ見出しの開閉では閉じない）
+  sidebar.addEventListener("click", (e) => {
+    if (!e.target.closest("a")) return;
+    if (getComputedStyle(navToggle).display !== "none") closeNav();
   });
 
   window.addEventListener("hashchange", () => {

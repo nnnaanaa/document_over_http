@@ -239,6 +239,46 @@
     navTreeEl.querySelectorAll("a").forEach((a) => {
       a.classList.toggle("active", a.dataset.path === current);
     });
+    const quizLink = document.getElementById("quizLink");
+    if (quizLink) quizLink.classList.toggle("active", isQuizPath(current));
+  }
+
+  function isQuizPath(path) {
+    return path === "quiz" || path.startsWith("quiz/");
+  }
+
+  function renderQuizPage(path) {
+    if (tocObserver) tocObserver.disconnect();
+    tocEl.innerHTML = "";
+    if (docPagerEl) docPagerEl.hidden = true;
+    document.title = "四択問題 – Document Over HTTP";
+    if (!window.DocQuiz) {
+      contentEl.innerHTML = '<p class="error">問題データを読み込めませんでした。</p>';
+    } else {
+      window.DocQuiz.render(contentEl, { route: path.slice("quiz/".length), manifest, folderLabel });
+    }
+    highlightActiveNav();
+  }
+
+  // 資料の末尾に、その資料の確認問題へのボタンを置く
+  function appendQuizCta(path) {
+    const n = window.DocQuiz ? window.DocQuiz.count(path) : 0;
+    if (!n) return;
+    const box = document.createElement("div");
+    box.className = "quiz-cta";
+    const text = document.createElement("div");
+    text.className = "quiz-cta-text";
+    const strong = document.createElement("strong");
+    strong.textContent = "理解度をチェック";
+    const sub = document.createElement("span");
+    sub.textContent = "この資料の内容から " + n + " 問の四択問題を出題します。";
+    text.append(strong, sub);
+    const a = document.createElement("a");
+    a.className = "quiz-cta-button";
+    a.href = "#/quiz/" + path;
+    a.textContent = "確認問題を解く";
+    box.append(text, a);
+    contentEl.appendChild(box);
   }
 
   // ---- Search ----
@@ -523,6 +563,10 @@
       document.title = "Document Over HTTP";
       return;
     }
+    if (isQuizPath(path)) {
+      renderQuizPage(path);
+      return;
+    }
 
     contentEl.innerHTML = '<p class="loading">読み込み中…</p>';
     tocEl.innerHTML = "";
@@ -539,6 +583,7 @@
       const safeHtml = window.DOMPurify ? DOMPurify.sanitize(rawHtml) : rawHtml;
       contentEl.innerHTML = safeHtml;
       decorateDocument(meta);
+      appendQuizCta(path);
 
       contentEl.querySelectorAll("pre code").forEach((block) => {
         if (window.hljs) hljs.highlightElement(block);

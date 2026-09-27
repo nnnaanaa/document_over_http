@@ -85,7 +85,7 @@
       // 文字列は同一オリジンのローカルファイル、オブジェクトは { path, url } で外部ソースを指定できる
       .map((entry) => (typeof entry === "string" ? { path: entry } : entry))
       .filter((entry) => entry && typeof entry.path === "string" && /\.md$/i.test(entry.path))
-      .map((entry) => {
+      .map((entry, order) => {
         const path = entry.path;
         const slash = path.lastIndexOf("/");
         const dir = slash === -1 ? "" : path.slice(0, slash);
@@ -93,7 +93,9 @@
         return {
           path,
           dir,
-          title: titleCache[path] || humanize(base),
+          order,
+          fixedTitle: Boolean(entry.title),
+          title: entry.title || titleCache[path] || humanize(base),
           url: entry.url || null,
           summary: entry.summary || "",
         };
@@ -102,19 +104,36 @@
     buildNavTree();
   }
 
-  // ドキュメント内の最初の見出しをタイトルとしてキャッシュ・反映する
+  function folderLabel(name) {
+    const labels = window.DOC_FOLDER_LABELS || {};
+    return labels[name] || name;
+  }
+
+  // 先頭が「# ファイル名.md」の資料は、直後の「## 見出し」を本来のタイトルとして扱う
+  function extractTitle(md) {
+    const lines = md.split(/\r?\n/);
+    const first = lines.findIndex((l) => /^#\s+\S/.test(l));
+    if (first === -1) return null;
+    const h1 = lines[first].replace(/^#\s+/, "").trim();
+    if (!/\.md$/i.test(h1)) return h1;
+    const next = lines.slice(first + 1).find((l) => l.trim() !== "");
+    const m = next && next.match(/^##\s+(.+?)\s*$/);
+    return m ? m[1] : h1;
+  }
+
   function updateTitleFromContent(path, text) {
-    const m = text.match(/^\s*#\s+(.+?)\s*$/m);
-    if (!m) return;
-    const title = m[1];
+    const title = extractTitle(text);
+    if (!title) return;
     const item = manifest.find((mm) => mm.path === path);
-    if (item && item.title !== title) {
+    if (item && !item.fixedTitle && item.title !== title) {
       item.title = title;
       titleCache[path] = title;
       saveTitleCache();
       const link = navTreeEl.querySelector('a[data-path="' + CSS.escape(path) + '"]');
-      const titleEl = link && link.querySelector(".nav-link-title");
+      if (!link) return;
+      const titleEl = link.querySelector(".nav-link-title");
       if (titleEl) titleEl.textContent = title;
+      link.title = item.summary ? title + " — " + item.summary : title;
     }
   }
 
@@ -139,17 +158,18 @@
     return /^readme\.md$/i.test(item.path.split("/").pop());
   }
 
+  // docs.js に書いた順序をそのまま表示順にする（学習順に並べられるように）
   function sortFiles(files) {
     return [...files].sort((a, b) => {
       const aReadme = isReadme(a);
       const bReadme = isReadme(b);
       if (aReadme !== bReadme) return aReadme ? -1 : 1;
-      return a.title.localeCompare(b.title, "ja");
+      return a.order - b.order;
     });
   }
 
   function sortedDirEntries(node) {
-    return [...node.dirs.entries()].sort((a, b) => a[0].localeCompare(b[0], "ja"));
+    return [...node.dirs.entries()];
   }
 
   function renderNode(node, container) {
@@ -160,7 +180,7 @@
       details.open = true;
       details.className = "nav-group";
       const summary = document.createElement("summary");
-      summary.textContent = name;
+      summary.textContent = folderLabel(name);
       details.appendChild(summary);
       renderNode(child, details);
       li.appendChild(details);
@@ -284,6 +304,7 @@
           const res = await fetch(item.url || item.path, { cache: "no-cache" });
           if (!res.ok) return;
           item.body = await res.text();
+          updateTitleFromContent(item.path, item.body);
         } catch {
           /* 取得できないファイルは検索対象から外れるだけで無視する */
         }
@@ -301,19 +322,12 @@
       .replace(/\s+/g, "-");
   }
 
+  let tocObserver = null;
+
   function buildToc() {
-    const headings = contentEl.querySelectorAll("h1, h2, h3");
-    tocEl.innerHTML = "";
-    if (headings.length < 2) return;
-
-    const title = document.createElement("div");
-    title.className = "toc-title";
-    title.textContent = "目次";
-    tocEl.appendChild(title);
-
     const usedIds = new Set();
-    headings.forEach((h) => {
-      let id = slugify(h.textContent);
+    contentEl.querySelectorAll("h1, h2, h3").forEach((h) => {
+      const id = slugify(h.textContent);
       let unique = id;
       let i = 2;
       while (usedIds.has(unique) || !unique) {
@@ -321,9 +335,23 @@
       }
       usedIds.add(unique);
       h.id = unique;
+    });
 
+    // ページタイトル(h1)は目次に含めず、節(h2)と小節(h3)だけを並べる
+    const headings = [...contentEl.querySelectorAll("h2, h3")];
+    tocEl.innerHTML = "";
+    if (tocObserver) tocObserver.disconnect();
+    if (headings.length < 2) return;
+
+    const title = document.createElement("div");
+    title.className = "toc-title";
+    title.textContent = "このページの内容";
+    tocEl.appendChild(title);
+
+    const links = new Map();
+    headings.forEach((h) => {
       const a = document.createElement("a");
-      a.href = "#" + currentHashPrefix() + "#" + unique;
+      a.href = "#" + currentHashPrefix() + "#" + h.id;
       a.textContent = h.textContent;
       a.className = "level-" + h.tagName.slice(1);
       a.addEventListener("click", (e) => {
@@ -331,6 +359,60 @@
         h.scrollIntoView({ behavior: "smooth", block: "start" });
       });
       tocEl.appendChild(a);
+      links.set(h, a);
+    });
+
+    // 今読んでいる節を目次上でハイライトする
+    const visible = new Set();
+    tocObserver = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((en) => (en.isIntersecting ? visible.add(en.target) : visible.delete(en.target)));
+        const current = headings.find((h) => visible.has(h));
+        if (!current) return;
+        links.forEach((a, h) => a.classList.toggle("active", h === current));
+      },
+      { root: document.querySelector(".content-area"), rootMargin: "0px 0px -70% 0px" }
+    );
+    headings.forEach((h) => tocObserver.observe(h));
+  }
+
+  // md の「# ファイル名.md」を外して「## 見出し」をページタイトルに昇格し、パンくずと概要を添える
+  function decorateDocument(meta) {
+    const first = contentEl.firstElementChild;
+    if (first && first.tagName === "H1" && /\.md$/i.test(first.textContent.trim())) {
+      const next = first.nextElementSibling;
+      first.remove();
+      if (next && next.tagName === "H2") {
+        const h1 = document.createElement("h1");
+        h1.innerHTML = next.innerHTML;
+        next.replaceWith(h1);
+      }
+    }
+
+    const titleEl = contentEl.firstElementChild;
+    if (titleEl && titleEl.tagName === "H1") {
+      const after = titleEl.nextElementSibling;
+      if (after && after.tagName === "HR") after.remove();
+
+      if (meta && meta.dir) {
+        const crumb = document.createElement("div");
+        crumb.className = "doc-breadcrumb";
+        crumb.textContent = meta.dir.split("/").map(folderLabel).join(" / ");
+        titleEl.before(crumb);
+      }
+      if (meta && meta.summary) {
+        const lead = document.createElement("p");
+        lead.className = "doc-lead";
+        lead.textContent = meta.summary;
+        titleEl.after(lead);
+      }
+    }
+
+    contentEl.querySelectorAll("table").forEach((table) => {
+      const wrap = document.createElement("div");
+      wrap.className = "table-wrap";
+      table.replaceWith(wrap);
+      wrap.appendChild(table);
     });
   }
 
@@ -456,6 +538,7 @@
       const rawHtml = marked.parse(md);
       const safeHtml = window.DOMPurify ? DOMPurify.sanitize(rawHtml) : rawHtml;
       contentEl.innerHTML = safeHtml;
+      decorateDocument(meta);
 
       contentEl.querySelectorAll("pre code").forEach((block) => {
         if (window.hljs) hljs.highlightElement(block);
@@ -465,7 +548,8 @@
       buildToc();
       renderPager(path);
 
-      document.title = (meta ? meta.title : path) + " – Document Over HTTP";
+      const pageH1 = contentEl.querySelector("h1");
+      document.title = (pageH1 ? pageH1.textContent : meta ? meta.title : path) + " – Document Over HTTP";
 
       const targetId = location.hash.split("#")[2];
       if (targetId) {

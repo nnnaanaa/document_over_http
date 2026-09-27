@@ -550,7 +550,7 @@ a:hover { color: var(--accent-hover); }
   display: flex;
   align-items: center;
   gap: 0.55rem;
-  margin: 0 0 0.75rem;
+  margin: 0 0 0.45rem;
   padding: 0.6rem 0.75rem;
   border: 1px solid var(--border-strong);
   border-radius: var(--radius);
@@ -816,6 +816,123 @@ a:hover { color: var(--accent-hover); }
 .quiz-result-rate { margin-top: 0.4rem; font-size: 0.95rem; font-weight: 700; color: var(--text-muted); }
 .markdown-body .quiz-result-message { margin: 0.75rem 0 0; }
 
+.nav-quiz-link + .nav-tree { margin-top: 0.8rem; }
+
+/* Keywords slideshow */
+.kw-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.9rem 1.25rem;
+  margin-bottom: 1.25rem;
+}
+.kw-field-scope { flex: 1 1 260px; }
+.kw-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding-bottom: 0.55rem;
+  font-size: 0.88rem;
+  cursor: pointer;
+  user-select: none;
+}
+.kw-check input { width: 1rem; height: 1rem; accent-color: var(--accent); }
+
+.kw-stage {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid var(--border-strong);
+  border-radius: 16px;
+  background: var(--bg-elevated);
+  overflow: hidden;
+  outline: none;
+}
+.kw-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1.1rem;
+  min-height: 340px;
+  padding: 2.5rem 2rem 2rem;
+  text-align: center;
+}
+.kw-card.kw-enter { animation: kw-fade 0.45s ease; }
+@keyframes kw-fade {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .kw-card.kw-enter { animation: none; }
+}
+.markdown-body .kw-source {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  text-decoration: none;
+}
+.markdown-body .kw-source:hover { color: var(--accent); text-decoration: underline; }
+.kw-term {
+  font-size: clamp(1.7rem, 4.2vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.35;
+  color: var(--text-strong);
+  overflow-wrap: anywhere;
+}
+.kw-desc {
+  max-width: 36em;
+  font-size: clamp(1rem, 1.8vw, 1.15rem);
+  line-height: 1.8;
+  color: var(--text);
+}
+.kw-progress { height: 4px; background: var(--border); }
+.kw-progress-fill { height: 100%; width: 0; background: var(--accent); transition: width 0.1s linear; }
+.kw-stage.is-paused .kw-progress-fill { background: var(--text-muted); }
+.kw-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.7rem 1rem;
+  background: var(--sidebar-bg);
+  border-top: 1px solid var(--border);
+}
+.kw-buttons { display: flex; gap: 0.4rem; }
+.kw-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--border-strong);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.kw-btn:hover { border-color: var(--accent); color: var(--accent); background: var(--active-bg); }
+.kw-btn-play { background: var(--accent); border-color: var(--accent); color: var(--bg-elevated); }
+.kw-btn-play:hover { background: var(--accent-hover); border-color: var(--accent-hover); color: var(--bg-elevated); }
+.kw-btn-play .kw-icon-play { display: none; }
+.kw-stage.is-paused .kw-btn-play .kw-icon-play { display: inline-flex; }
+.kw-stage.is-paused .kw-btn-play .kw-icon-pause { display: none; }
+.kw-btn span { display: inline-flex; }
+.kw-counter { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* 全画面ではカードを画面いっぱいに広げ、文字も大きくする */
+.kw-stage:fullscreen {
+  border: none;
+  border-radius: 0;
+  width: 100vw;
+  height: 100vh;
+}
+.kw-stage:fullscreen .kw-card { flex: 1; padding: 3rem 6vw; gap: 2rem; }
+.kw-stage:fullscreen .kw-term { font-size: clamp(2.4rem, 6vw, 5rem); }
+.kw-stage:fullscreen .kw-desc { font-size: clamp(1.2rem, 2.4vw, 2rem); max-width: 40em; }
+.kw-stage:fullscreen .kw-source { font-size: 1rem; }
+
 /* Scrollbars */
 .sidebar::-webkit-scrollbar, .content-area::-webkit-scrollbar, .toc::-webkit-scrollbar {
   width: 8px;
@@ -851,6 +968,7 @@ a:hover { color: var(--accent-hover); }
   .quiz-stats { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .quiz-card { padding: 1.1rem; }
   .markdown-body .quiz-question { font-size: 1.05rem; }
+  .kw-card { min-height: 280px; padding: 2rem 1.25rem 1.5rem; }
 }
 
 @media (max-width: 380px) {

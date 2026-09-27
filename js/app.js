@@ -241,6 +241,21 @@
     });
     const quizLink = document.getElementById("quizLink");
     if (quizLink) quizLink.classList.toggle("active", isQuizPath(current));
+    const keywordsLink = document.getElementById("keywordsLink");
+    if (keywordsLink) keywordsLink.classList.toggle("active", current === "keywords");
+  }
+
+  function renderKeywordsPage() {
+    if (tocObserver) tocObserver.disconnect();
+    tocEl.innerHTML = "";
+    if (docPagerEl) docPagerEl.hidden = true;
+    document.title = "キーワードをながめる – Document Over HTTP";
+    if (!window.DocKeywords) {
+      contentEl.innerHTML = '<p class="error">キーワードデータを読み込めませんでした。</p>';
+    } else {
+      window.DocKeywords.render(contentEl, { manifest, folderLabel });
+    }
+    highlightActiveNav();
   }
 
   function isQuizPath(path) {
@@ -563,8 +578,13 @@
       document.title = "Document Over HTTP";
       return;
     }
+    if (window.DocKeywords) window.DocKeywords.stop();
     if (isQuizPath(path)) {
       renderQuizPage(path);
+      return;
+    }
+    if (path === "keywords") {
+      renderKeywordsPage();
       return;
     }
 

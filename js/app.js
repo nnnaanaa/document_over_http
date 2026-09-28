@@ -12,6 +12,16 @@
   const sidebar = document.getElementById("sidebar");
   const navToggle = document.getElementById("navToggle");
   const navOverlay = document.getElementById("navOverlay");
+  const contentArea = document.querySelector(".content-area");
+
+  // scrollIntoView はページ全体までスクロールさせてしまい、iPhone では
+  // 最上段（メニューボタン等）がアドレスバーの裏に押し出されるため、本文エリアだけを動かす
+  function scrollContentTo(el, smooth) {
+    const margin = el ? parseFloat(getComputedStyle(el).scrollMarginTop) || 0 : 0;
+    const top = el ? contentArea.scrollTop + el.getBoundingClientRect().top - contentArea.getBoundingClientRect().top - margin : 0;
+    contentArea.scrollTo({ top: Math.max(0, top), behavior: smooth ? "smooth" : "auto" });
+    if (window.scrollY) window.scrollTo(0, 0);
+  }
 
   const HLJS_LIGHT = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github.min.css";
   const HLJS_DARK = "https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css";
@@ -411,7 +421,7 @@
       a.className = "level-" + h.tagName.slice(1);
       a.addEventListener("click", (e) => {
         e.preventDefault();
-        h.scrollIntoView({ behavior: "smooth", block: "start" });
+        scrollContentTo(h, true);
       });
       tocEl.appendChild(a);
       links.set(h, a);
@@ -617,12 +627,8 @@
       document.title = (pageH1 ? pageH1.textContent : meta ? meta.title : path) + " – Document Over HTTP";
 
       const targetId = location.hash.split("#")[2];
-      if (targetId) {
-        const el = document.getElementById(targetId);
-        if (el) el.scrollIntoView({ block: "start" });
-      } else {
-        contentEl.scrollIntoView({ block: "start" });
-      }
+      const target = targetId ? document.getElementById(targetId) : null;
+      scrollContentTo(target, false);
     } catch (err) {
       contentEl.innerHTML =
         '<p class="error">ドキュメントを読み込めませんでした: ' +

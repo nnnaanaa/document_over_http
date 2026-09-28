@@ -65,6 +65,8 @@ a:hover { color: var(--accent-hover); }
   display: flex;
   flex-direction: column;
   height: 100vh;
+  /* iPhone では 100vh がアドレスバー分だけ大きくなるため、実際の表示高さ(dvh)を優先する */
+  height: 100dvh;
 }
 
 /* Top bar */

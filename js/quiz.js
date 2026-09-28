@@ -388,7 +388,16 @@
     const next = c.querySelector(".quiz-next");
     next.hidden = false;
     next.focus({ preventScroll: true });
-    feedback.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    revealInContentArea(next);
+  }
+
+  // 解説と「次へ」ボタンが画面外なら見える位置まで本文エリアだけをスクロールする
+  // （scrollIntoView はページ全体も動かし、iPhone でヘッダーが隠れるため使わない）
+  function revealInContentArea(target) {
+    const area = ctx.container.closest(".content-area");
+    if (!area || !target) return;
+    const overflow = target.getBoundingClientRect().bottom - area.getBoundingClientRect().bottom + 24;
+    if (overflow > 0) area.scrollBy({ top: overflow, behavior: "smooth" });
   }
 
   function goNext() {

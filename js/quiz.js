@@ -475,15 +475,29 @@
     }
   });
 
+  // ホームなどから直接出題するためのルート指定（#/quiz/@weak など）
+  function scopeFromRoute(route) {
+    if (route === "@weak") return { scope: { type: "weak" }, limit: 0 };
+    if (route === "@random") return { scope: { type: "all" }, limit: 10 };
+    if (route.startsWith("@folder:")) return { scope: { type: "folder", value: route.slice(8) }, limit: 10 };
+    if (bank.some((q) => q.doc === route)) return { scope: { type: "doc", value: route }, limit: 0 };
+    return null;
+  }
+
   window.DocQuiz = {
     count(path) {
       return bank.filter((q) => q.doc === path).length;
     },
-    // route: "" なら出題設定、資料パスならその資料の問題をすぐに出題する
+    // 資料パスで絞り込んだ成績の集計（ホーム画面用）
+    summary(filter) {
+      return summarize(filter ? bank.filter((q) => filter(q.doc)) : bank);
+    },
+    // route: "" なら出題設定、資料パスや @weak / @random / @folder:<dir> なら該当範囲をすぐに出題する
     render(container, options) {
       ctx = { container, manifest: options.manifest, folderLabel: options.folderLabel };
-      if (options.route && bank.some((q) => q.doc === options.route)) {
-        startSession({ type: "doc", value: options.route }, 0);
+      const target = options.route ? scopeFromRoute(options.route) : null;
+      if (target && questionsIn(target.scope).length) {
+        startSession(target.scope, target.limit);
       } else {
         renderSetup();
       }

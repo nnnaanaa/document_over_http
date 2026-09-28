@@ -35,15 +35,31 @@
   });
 
   // ---- Theme ----
+  // Cookie/サイトデータをブロックしている環境では localStorage へのアクセス自体が例外になるため、
+  // 失敗しても画面の表示は続けられるようにする
+  function storageGet(key) {
+    try {
+      return localStorage.getItem(key);
+    } catch {
+      return null;
+    }
+  }
+  function storageSet(key, value) {
+    try {
+      localStorage.setItem(key, value);
+    } catch {
+      /* 保存できなくても表示には影響しない */
+    }
+  }
+
   function applyTheme(theme) {
     document.documentElement.setAttribute("data-theme", theme);
     hljsTheme.href = theme === "dark" ? HLJS_DARK : HLJS_LIGHT;
-    localStorage.setItem("doc-viewer-theme", theme);
+    storageSet("doc-viewer-theme", theme);
   }
 
   function initTheme() {
-    const saved = localStorage.getItem("doc-viewer-theme");
-    applyTheme(saved || "light");
+    applyTheme(storageGet("doc-viewer-theme") || "light");
   }
 
   themeToggle.addEventListener("click", () => {
@@ -70,18 +86,14 @@
 
   function loadTitleCache() {
     try {
-      return JSON.parse(localStorage.getItem("doc-viewer-titles") || "{}");
+      return JSON.parse(storageGet("doc-viewer-titles") || "{}") || {};
     } catch {
       return {};
     }
   }
 
   function saveTitleCache() {
-    try {
-      localStorage.setItem("doc-viewer-titles", JSON.stringify(titleCache));
-    } catch {
-      /* ignore quota errors */
-    }
+    storageSet("doc-viewer-titles", JSON.stringify(titleCache));
   }
 
   // ---- Manifest loading ----
@@ -252,18 +264,48 @@
     const quizLink = document.getElementById("quizLink");
     if (quizLink) quizLink.classList.toggle("active", isQuizPath(current));
     const keywordsLink = document.getElementById("keywordsLink");
-    if (keywordsLink) keywordsLink.classList.toggle("active", current === "keywords");
+    if (keywordsLink) keywordsLink.classList.toggle("active", isKeywordsPath(current));
+    const homeLink = document.getElementById("homeLink");
+    if (homeLink) homeLink.classList.toggle("active", isHomePath(current));
   }
 
-  function renderKeywordsPage() {
+  const LAST_DOC_KEY = "doc-viewer-last";
+
+  function isHomePath(path) {
+    return !path || path === "home";
+  }
+
+  function isKeywordsPath(path) {
+    return path === "keywords" || path.startsWith("keywords/");
+  }
+
+  // 資料以外の画面（ホーム・四択問題・キーワード）に切り替えるときの共通処理
+  function enterAppPage(title) {
     if (tocObserver) tocObserver.disconnect();
     tocEl.innerHTML = "";
     if (docPagerEl) docPagerEl.hidden = true;
-    document.title = "キーワードをながめる – Document Over HTTP";
+    document.title = title + " – Document Over HTTP";
+    scrollContentTo(null, false);
+  }
+
+  function renderHomePage() {
+    enterAppPage("学習ホーム");
+    if (!window.DocHome) {
+      contentEl.innerHTML = '<p class="error">ホーム画面を読み込めませんでした。</p>';
+    } else {
+      window.DocHome.render(contentEl, { manifest, folderLabel, lastPath: storageGet(LAST_DOC_KEY) });
+    }
+    highlightActiveNav();
+  }
+
+  function renderKeywordsPage(path) {
+    enterAppPage("キーワードをながめる");
     if (!window.DocKeywords) {
       contentEl.innerHTML = '<p class="error">キーワードデータを読み込めませんでした。</p>';
     } else {
-      window.DocKeywords.render(contentEl, { manifest, folderLabel });
+      const route = path.slice("keywords/".length);
+      const scope = route.startsWith("@") ? route.slice(1) : "";
+      window.DocKeywords.render(contentEl, { manifest, folderLabel, scope });
     }
     highlightActiveNav();
   }
@@ -273,10 +315,7 @@
   }
 
   function renderQuizPage(path) {
-    if (tocObserver) tocObserver.disconnect();
-    tocEl.innerHTML = "";
-    if (docPagerEl) docPagerEl.hidden = true;
-    document.title = "四択問題 – Document Over HTTP";
+    enterAppPage("四択問題");
     if (!window.DocQuiz) {
       contentEl.innerHTML = '<p class="error">問題データを読み込めませんでした。</p>';
     } else {
@@ -491,14 +530,6 @@
     return hash.split("#")[0];
   }
 
-  function findDefaultPath() {
-    if (manifest.length === 0) return null;
-    const readme = manifest.find((m) => /^readme\.md$/i.test(m.path));
-    if (readme) return readme.path;
-    const sorted = [...manifest].sort((a, b) => a.path.localeCompare(b.path, "ja"));
-    return sorted[0].path;
-  }
-
   function makePagerLink(item, label, className) {
     const a = document.createElement("a");
     a.href = "#/" + item.path;
@@ -581,20 +612,17 @@
   }
 
   async function renderPath(path) {
-    if (!path) {
-      contentEl.innerHTML = '<p class="empty-state">左のメニューからドキュメントを選択してください。</p>';
-      tocEl.innerHTML = "";
-      if (docPagerEl) docPagerEl.hidden = true;
-      document.title = "Document Over HTTP";
+    if (window.DocKeywords) window.DocKeywords.stop();
+    if (isHomePath(path)) {
+      renderHomePage();
       return;
     }
-    if (window.DocKeywords) window.DocKeywords.stop();
     if (isQuizPath(path)) {
       renderQuizPage(path);
       return;
     }
-    if (path === "keywords") {
-      renderKeywordsPage();
+    if (isKeywordsPath(path)) {
+      renderKeywordsPage(path);
       return;
     }
 
@@ -614,6 +642,7 @@
       contentEl.innerHTML = safeHtml;
       decorateDocument(meta);
       appendQuizCta(path);
+      if (meta && meta.dir) storageSet(LAST_DOC_KEY, path);
 
       contentEl.querySelectorAll("pre code").forEach((block) => {
         if (window.hljs) hljs.highlightElement(block);
@@ -660,15 +689,7 @@
   });
 
   window.addEventListener("hashchange", () => {
-    let path = currentPath();
-    if (!path) {
-      path = findDefaultPath();
-      if (path) {
-        location.hash = "/" + path;
-        return;
-      }
-    }
-    renderPath(path);
+    renderPath(currentPath());
   });
 
   // ---- Init ----
@@ -686,13 +707,6 @@
     syncTopbarHeight();
     const copyYear = document.getElementById("copyYear");
     if (copyYear) copyYear.textContent = new Date().getFullYear();
-    if (!currentPath()) {
-      const def = findDefaultPath();
-      if (def) {
-        location.hash = "/" + def;
-        return;
-      }
-    }
     renderPath(currentPath());
   }
 

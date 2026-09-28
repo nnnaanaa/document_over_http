@@ -12,6 +12,7 @@
   let index = 0;
   let elapsed = 0;
   let playing = true;
+  let revealed = true;
   let timer = null;
   let wakeLock = null;
   let prefs = loadPrefs();
@@ -27,6 +28,7 @@
       scope: typeof p.scope === "string" ? p.scope : "all",
       interval: INTERVALS.includes(p.interval) ? p.interval : 5,
       shuffle: p.shuffle !== false,
+      recall: p.recall === true,
     };
   }
   function savePrefs() {
@@ -163,12 +165,29 @@
     });
     shuffleField.append(shuffleInput, el("span", null, "ランダムな順番"));
 
-    bar.append(scopeField, intervalField, shuffleField);
+    const recallField = el("label", "kw-check");
+    const recallInput = el("input");
+    recallInput.type = "checkbox";
+    recallInput.checked = prefs.recall;
+    recallInput.addEventListener("change", () => {
+      prefs.recall = recallInput.checked;
+      savePrefs();
+      elapsed = 0;
+      showCard();
+    });
+    recallField.append(recallInput, el("span", null, "説明を後から表示（思い出す練習）"));
+
+    const checks = el("div", "kw-checks");
+    checks.append(shuffleField, recallField);
+    bar.append(scopeField, intervalField, checks);
     c.append(bar);
 
     const stage = el("div", "kw-stage");
     stage.tabIndex = -1;
     const card = el("div", "kw-card");
+    card.addEventListener("click", (e) => {
+      if (!revealed && !e.target.closest("a")) reveal();
+    });
     const progress = el("div", "kw-progress");
     progress.append(el("div", "kw-progress-fill"));
 
@@ -234,8 +253,11 @@
     source.href = "#/" + k.doc;
     source.title = "この資料を開く";
     const term = el("div", "kw-term", k.term);
-    const desc = el("div", "kw-desc", k.desc || "");
-    card.append(source, term, desc);
+    // 思い出す練習モードでは、説明を切り替え間隔の半分が過ぎるまで隠す（タップや → で先に表示できる）
+    revealed = !prefs.recall;
+    const descWrap = el("div", "kw-desc-wrap" + (revealed ? "" : " is-hidden"));
+    descWrap.append(el("div", "kw-desc", k.desc || ""), el("div", "kw-think", "説明を思い出してみよう（タップで表示）"));
+    card.append(source, term, descWrap);
     // 切り替えのたびにフェードインさせる
     card.classList.remove("kw-enter");
     void card.offsetWidth;
@@ -249,8 +271,19 @@
     if (fill) fill.style.width = Math.min(100, (elapsed / (prefs.interval * 1000)) * 100) + "%";
   }
 
+  function reveal() {
+    revealed = true;
+    const wrap = ctx && ctx.container.querySelector(".kw-desc-wrap");
+    if (wrap) wrap.classList.remove("is-hidden");
+  }
+
   function step(delta) {
     if (!deck.length) return;
+    // 説明が隠れているときの「次へ」は、まず説明を表示する
+    if (delta > 0 && !revealed) {
+      reveal();
+      return;
+    }
     index = (index + delta + deck.length) % deck.length;
     // 一周したらシャッフルし直して毎回違う順番にする
     if (delta > 0 && index === 0 && prefs.shuffle) deck = shuffle(deck);
@@ -265,7 +298,9 @@
     }
     if (!playing || !deck.length) return;
     elapsed += TICK_MS;
-    if (elapsed >= prefs.interval * 1000) step(1);
+    const total = prefs.interval * 1000;
+    if (!revealed && elapsed >= total / 2) reveal();
+    if (elapsed >= total) step(1);
     else updateProgress();
   }
 
@@ -350,9 +385,11 @@
   });
 
   window.DocKeywords = {
+    // options.scope（"folder:<dir>" など）を渡すと、その範囲で開始する（ホーム画面から開く場合）
     render(container, options) {
       ctx = { container, manifest: options.manifest, folderLabel: options.folderLabel };
       prefs = loadPrefs();
+      if (options.scope) prefs.scope = options.scope;
       render();
     },
     stop,

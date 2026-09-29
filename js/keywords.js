@@ -16,7 +16,7 @@
     tango: {
       prefsKey: "doc-tango-prefs",
       title: "過去問の単語帳",
-      lead: "ネットワークスペシャリスト試験の過去問（令和5〜7年度 春期）に出てきた重要語が一定間隔で自動的に切り替わります。ながめておくだけで頻出の用語を復習できます。",
+      lead: "ネットワークスペシャリスト試験の過去問（平成21年度〜令和7年度）に出てきた重要語が一定間隔で自動的に切り替わります。ながめておくだけで頻出の用語を復習できます。",
       empty: "tango.js に単語が登録されていません。",
       load: () => (Array.isArray(window.TANGO) ? window.TANGO : []).filter((k) => k && k.term),
     },
@@ -84,15 +84,20 @@
     return ctx.manifest.map((m) => m.path).filter((p) => withK.has(p));
   }
 
-  const yearLabel = (y) => "令和" + y + "年度 春期";
+  const yearLabel = (y) => (window.TANGO_YEARS || {})[y] || y;
+  // TANGO_YEARS に書いた順（新しい年度から）で、単語が1つ以上ある年度だけを返す
   function tangoYears() {
-    return [...new Set(all.flatMap((k) => (k.src || []).map((s) => s[0])))].sort((a, b) => b - a);
+    const used = new Set(all.flatMap((k) => (k.src || []).map((s) => s[0])));
+    return Object.keys(window.TANGO_YEARS || {}).filter((y) => used.has(y));
   }
 
-  // 過去問単語の出典表示（例：LAN・無線 ｜ 出典：令和7年度 午前Ⅱ 問15 / 令和5年度 午前Ⅱ 問15）
+  // 過去問単語の出典表示（例：LAN・無線 ｜ 出典：令和7年度 春期 午前Ⅱ 問15 / 令和5年度 春期 午前Ⅱ 問15）
   function tangoSource(k) {
     const fields = window.TANGO_FIELDS || {};
-    const src = (k.src || []).map((s) => "令和" + s[0] + "年度 " + s[1]);
+    // 年度で絞り込んでいるときは，その年度の出典を先頭に出す
+    const year = prefs.scope.startsWith("year:") ? prefs.scope.slice(5) : "";
+    const ordered = [...(k.src || [])].sort((a, b) => (b[0] === year) - (a[0] === year));
+    const src = ordered.map((s) => yearLabel(s[0]) + " " + s[1]);
     const shown = src.slice(0, 2).join(" / ") + (src.length > 2 ? " ほか" : "");
     return (fields[k.field] ? fields[k.field] + " ｜ " : "") + (shown ? "出典：" + shown : "");
   }
@@ -103,7 +108,7 @@
       return all.filter((k) => k.field === field);
     }
     if (scope.startsWith("year:")) {
-      const year = Number(scope.slice(5));
+      const year = scope.slice(5);
       return all.filter((k) => (k.src || []).some((s) => s[0] === year));
     }
     if (scope.startsWith("folder:")) {

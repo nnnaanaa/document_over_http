@@ -1,11 +1,29 @@
 (() => {
   "use strict";
 
-  const PREFS_KEY = "doc-keywords-prefs";
   const TICK_MS = 100;
   const INTERVALS = [3, 5, 8, 10, 15];
 
-  const all = (Array.isArray(window.KEYWORDS) ? window.KEYWORDS : []).filter((k) => k && k.doc && k.term);
+  // 同じ画面で「資料のキーワード」と「過去問の単語帳」を切り替えて表示する
+  const MODES = {
+    keywords: {
+      prefsKey: "doc-keywords-prefs",
+      title: "キーワードをながめる",
+      lead: "重要な用語が一定間隔で自動的に切り替わります。ながめておくだけで要点を復習できます。全画面にすると画面いっぱいに表示します。",
+      empty: "keywords.js にキーワードが登録されていません。",
+      load: () => (Array.isArray(window.KEYWORDS) ? window.KEYWORDS : []).filter((k) => k && k.doc && k.term),
+    },
+    tango: {
+      prefsKey: "doc-tango-prefs",
+      title: "過去問の単語帳",
+      lead: "ネットワークスペシャリスト試験の過去問（令和5〜7年度 春期）に出てきた重要語が一定間隔で自動的に切り替わります。ながめておくだけで頻出の用語を復習できます。",
+      empty: "tango.js に単語が登録されていません。",
+      load: () => (Array.isArray(window.TANGO) ? window.TANGO : []).filter((k) => k && k.term),
+    },
+  };
+
+  let mode = MODES.keywords;
+  let all = mode.load();
 
   let ctx = null;
   let deck = [];
@@ -20,7 +38,7 @@
   function loadPrefs() {
     let p = {};
     try {
-      p = JSON.parse(localStorage.getItem(PREFS_KEY) || "{}") || {};
+      p = JSON.parse(localStorage.getItem(mode.prefsKey) || "{}") || {};
     } catch {
       /* 既定値を使う */
     }
@@ -33,7 +51,7 @@
   }
   function savePrefs() {
     try {
-      localStorage.setItem(PREFS_KEY, JSON.stringify(prefs));
+      localStorage.setItem(mode.prefsKey, JSON.stringify(prefs));
     } catch {
       /* 保存できなくても動作には影響しない */
     }
@@ -66,7 +84,28 @@
     return ctx.manifest.map((m) => m.path).filter((p) => withK.has(p));
   }
 
+  const yearLabel = (y) => "令和" + y + "年度 春期";
+  function tangoYears() {
+    return [...new Set(all.flatMap((k) => (k.src || []).map((s) => s[0])))].sort((a, b) => b - a);
+  }
+
+  // 過去問単語の出典表示（例：LAN・無線 ｜ 出典：令和7年度 午前Ⅱ 問15 / 令和5年度 午前Ⅱ 問15）
+  function tangoSource(k) {
+    const fields = window.TANGO_FIELDS || {};
+    const src = (k.src || []).map((s) => "令和" + s[0] + "年度 " + s[1]);
+    const shown = src.slice(0, 2).join(" / ") + (src.length > 2 ? " ほか" : "");
+    return (fields[k.field] ? fields[k.field] + " ｜ " : "") + (shown ? "出典：" + shown : "");
+  }
+
   function keywordsIn(scope) {
+    if (scope.startsWith("field:")) {
+      const field = scope.slice(6);
+      return all.filter((k) => k.field === field);
+    }
+    if (scope.startsWith("year:")) {
+      const year = Number(scope.slice(5));
+      return all.filter((k) => (k.src || []).some((s) => s[0] === year));
+    }
     if (scope.startsWith("folder:")) {
       const dir = scope.slice(7);
       return all.filter((k) => k.doc.startsWith(dir + "/"));
@@ -79,9 +118,12 @@
   }
 
   function buildDeck() {
-    // docs.js の並び順で並べ、シャッフルしない場合は資料の順に流れるようにする
-    const order = new Map(orderedDocs().map((p, i) => [p, i]));
-    const list = keywordsIn(prefs.scope).sort((a, b) => (order.get(a.doc) ?? 0) - (order.get(b.doc) ?? 0));
+    // 資料のキーワードは docs.js の並び順で並べ、シャッフルしない場合は資料の順に流れるようにする
+    const list = keywordsIn(prefs.scope);
+    if (mode === MODES.keywords) {
+      const order = new Map(orderedDocs().map((p, i) => [p, i]));
+      list.sort((a, b) => (order.get(a.doc) ?? 0) - (order.get(b.doc) ?? 0));
+    }
     deck = prefs.shuffle ? shuffle(list) : list;
     index = 0;
     elapsed = 0;
@@ -92,17 +134,11 @@
     const c = ctx.container;
     c.innerHTML = "";
     c.append(el("div", "doc-breadcrumb", "復習"));
-    c.append(el("h1", null, "キーワードをながめる"));
-    c.append(
-      el(
-        "p",
-        "doc-lead",
-        "重要な用語が一定間隔で自動的に切り替わります。ながめておくだけで要点を復習できます。全画面にすると画面いっぱいに表示します。"
-      )
-    );
+    c.append(el("h1", null, mode.title));
+    c.append(el("p", "doc-lead", mode.lead));
 
     if (!all.length) {
-      c.append(el("p", "empty-state", "keywords.js にキーワードが登録されていません。"));
+      c.append(el("p", "empty-state", mode.empty));
       return;
     }
 
@@ -119,14 +155,20 @@
       parent.append(o);
     };
     addOpt(scopeSelect, "all", "すべて");
-    const folderGroup = el("optgroup");
-    folderGroup.label = "カテゴリ";
-    [...new Set(orderedDocs().map(dirOf))].forEach((dir) => addOpt(folderGroup, "folder:" + dir, dirLabel(dir)));
-    scopeSelect.append(folderGroup);
-    const docGroup = el("optgroup");
-    docGroup.label = "資料";
-    orderedDocs().forEach((p) => addOpt(docGroup, "doc:" + p, docTitle(p)));
-    scopeSelect.append(docGroup);
+    const group = (label, entries) => {
+      const g = el("optgroup");
+      g.label = label;
+      entries.forEach(([value, text]) => addOpt(g, value, text));
+      scopeSelect.append(g);
+    };
+    if (mode === MODES.tango) {
+      const fields = window.TANGO_FIELDS || {};
+      group("分野", Object.keys(fields).map((f) => ["field:" + f, fields[f]]));
+      group("出題年度", tangoYears().map((y) => ["year:" + y, yearLabel(y)]));
+    } else {
+      group("カテゴリ", [...new Set(orderedDocs().map(dirOf))].map((dir) => ["folder:" + dir, dirLabel(dir)]));
+      group("資料", orderedDocs().map((p) => ["doc:" + p, docTitle(p)]));
+    }
     if (![...scopeSelect.options].some((o) => o.value === prefs.scope)) prefs.scope = "all";
     scopeSelect.value = prefs.scope;
     scopeSelect.addEventListener("change", () => {
@@ -232,6 +274,19 @@
     stage.append(card, progress, footer);
     c.append(stage);
     c.append(el("p", "quiz-hint", "キーボード: Space で一時停止 / ← → で前後 / F で全画面"));
+    if (mode === MODES.tango) {
+      const note = el(
+        "p",
+        "kw-note",
+        "出典：独立行政法人情報処理推進機構（IPA）が公表しているネットワークスペシャリスト試験の過去問題。用語は各問題から選び，説明は本サイトで作成したものです。 "
+      );
+      const link = el("a", null, "IPA 過去問題");
+      link.href = "https://www.ipa.go.jp/shiken/mondai-kaiotu/index.html";
+      link.target = "_blank";
+      link.rel = "noopener";
+      note.append(link);
+      c.append(note);
+    }
 
     buildDeck();
     showCard();
@@ -249,9 +304,14 @@
       return;
     }
     const k = deck[index];
-    const source = el("a", "kw-source", dirLabel(dirOf(k.doc)) + " / " + docTitle(k.doc));
-    source.href = "#/" + k.doc;
-    source.title = "この資料を開く";
+    let source;
+    if (k.doc) {
+      source = el("a", "kw-source", dirLabel(dirOf(k.doc)) + " / " + docTitle(k.doc));
+      source.href = "#/" + k.doc;
+      source.title = "この資料を開く";
+    } else {
+      source = el("div", "kw-source", tangoSource(k));
+    }
     const term = el("div", "kw-term", k.term);
     // 思い出す練習モードでは、説明を切り替え間隔の半分が過ぎるまで隠す（タップや → で先に表示できる）
     revealed = !prefs.recall;
@@ -385,9 +445,15 @@
   });
 
   window.DocKeywords = {
+    // options.mode が "tango" なら過去問の単語帳を表示する
     // options.scope（"folder:<dir>" など）を渡すと、その範囲で開始する（ホーム画面から開く場合）
+    count(modeName) {
+      return (MODES[modeName] || MODES.keywords).load().length;
+    },
     render(container, options) {
       ctx = { container, manifest: options.manifest, folderLabel: options.folderLabel };
+      mode = MODES[options.mode] || MODES.keywords;
+      all = mode.load();
       prefs = loadPrefs();
       if (options.scope) prefs.scope = options.scope;
       render();

@@ -1011,107 +1011,7 @@ a:hover { color: var(--accent-hover); }
 .kw-stage.is-paused .kw-btn-play .kw-icon-pause { display: none; }
 .kw-btn span { display: inline-flex; }
 .kw-counter { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
-
-/* Past exam slideshow（キーワードの kw-stage 系の枠を共用） */
-.kk-card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.9rem;
-  min-height: 380px;
-  padding: 1.5rem 1.6rem 1.4rem;
-  text-align: left;
-}
-.kk-card.kw-enter { animation: kw-fade 0.45s ease; }
-.kk-source { font-size: 0.76rem; font-weight: 600; color: var(--text-muted); }
-.kk-mondai { display: flex; flex-wrap: wrap; align-items: center; gap: 0.5rem 0.75rem; }
-.kk-mondai-title { font-weight: 700; color: var(--text-strong); }
-.kk-label {
-  padding: 0.1rem 0.6rem;
-  border-radius: 999px;
-  background: var(--accent-soft);
-  color: var(--accent);
-  font-size: 0.8rem;
-  font-weight: 700;
-}
-.kk-context {
-  padding: 0.7rem 0.9rem;
-  border-left: 3px solid var(--border-strong);
-  background: var(--sidebar-bg);
-  border-radius: 0 8px 8px 0;
-  font-size: 0.9rem;
-  line-height: 1.75;
-}
-.kk-context-label { font-size: 0.72rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.2rem; }
-.kk-question {
-  font-size: 1.05rem;
-  font-weight: 600;
-  line-height: 1.8;
-  color: var(--text-strong);
-  white-space: pre-wrap;
-}
-.kk-figure {
-  max-width: 100%;
-  align-self: flex-start;
-  border: 1px solid var(--border);
-  border-radius: 8px;
-  background: #fff;
-}
-.markdown-body .kk-choices { list-style: none; margin: 0; padding: 0; display: grid; gap: 0.45rem; }
-.markdown-body .kk-choices li {
-  display: flex;
-  gap: 0.7rem;
-  margin: 0;
-  padding: 0.55rem 0.8rem;
-  border: 1.5px solid var(--border);
-  border-radius: 8px;
-  line-height: 1.65;
-  transition: border-color 0.3s ease, background-color 0.3s ease;
-}
-.kk-key { flex-shrink: 0; font-weight: 700; color: var(--text-muted); }
-.kk-choice-wrap { margin: 0; }
-.markdown-body .kk-choice-table td:first-child { min-width: 2.5em; width: 2.5em; text-align: center; }
-.markdown-body .kk-choice-table tr td { transition: background-color 0.3s ease; }
-.kk-answer {
-  display: flex;
-  align-items: baseline;
-  gap: 0.75rem;
-  padding: 0.7rem 0.9rem;
-  border-radius: 8px;
-  background: var(--ok-bg);
-  border-left: 4px solid var(--ok);
-  transition: opacity 0.35s ease;
-}
-.kk-answer-block { flex-direction: column; gap: 0.3rem; }
-.kk-answer-label { font-size: 0.78rem; font-weight: 800; color: var(--ok); white-space: nowrap; }
-.kk-answer-body { font-weight: 700; color: var(--text-strong); white-space: pre-wrap; line-height: 1.75; }
-.kk-links { display: flex; flex-wrap: wrap; gap: 0.4rem 1rem; font-size: 0.8rem; margin-top: auto; }
-.markdown-body .kk-pdf { font-weight: 600; }
-.markdown-body .kk-note { margin-top: 1.25rem; font-size: 0.78rem; line-height: 1.7; color: var(--text-muted); }
-
-/* 解答を隠している間は正解の強調も消し，考えるための案内を出す */
-.kk-card:not(.is-revealed) { cursor: pointer; }
-.kk-card:not(.is-revealed) .kk-answer {
-  position: relative;
-  background: var(--sidebar-bg);
-  border-left-color: var(--border-strong);
-}
-.kk-card:not(.is-revealed) .kk-answer > * { visibility: hidden; }
-.kk-card:not(.is-revealed) .kk-answer::after {
-  content: "考えてみよう（タップで解答を表示）";
-  position: absolute;
-  inset: 0;
-  display: flex;
-  align-items: center;
-  padding: 0 0.9rem;
-  color: var(--text-muted);
-  font-size: 0.85rem;
-}
-.kk-card.is-revealed .kk-choices li.is-correct { border-color: var(--ok); background: var(--ok-bg); }
-.kk-card.is-revealed .kk-choices li.is-correct .kk-key { color: var(--ok); }
-.markdown-body .kk-card.is-revealed .kk-choice-table tr.is-correct td { background: var(--ok-bg); color: var(--text-strong); font-weight: 700; }
-
-.kk-stage:fullscreen .kk-card { flex: 1; overflow: auto; padding: 2.5rem 6vw; font-size: 1.15rem; }
-.kk-stage:fullscreen .kk-question { font-size: clamp(1.2rem, 2vw, 1.6rem); }
+.markdown-body .kw-note { margin-top: 1rem; font-size: 0.78rem; line-height: 1.7; color: var(--text-muted); }
 
 /* 全画面ではカードを画面いっぱいに広げ、文字も大きくする */
 .kw-stage:fullscreen {
@@ -1160,8 +1060,6 @@ a:hover { color: var(--accent-hover); }
   .quiz-card { padding: 1.1rem; }
   .markdown-body .quiz-question { font-size: 1.05rem; }
   .kw-card { min-height: 280px; padding: 2rem 1.25rem 1.5rem; }
-  .kk-card { padding: 1.1rem 1rem; min-height: 320px; }
-  .kk-question { font-size: 1rem; }
   .markdown-body .quiz-progress-table th, .markdown-body .quiz-progress-table td { padding: 0.55rem 0.6rem; }
 }
 

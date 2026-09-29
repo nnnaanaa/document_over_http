@@ -267,20 +267,23 @@
     if (keywordsLink) keywordsLink.classList.toggle("active", isKeywordsPath(current));
     const homeLink = document.getElementById("homeLink");
     if (homeLink) homeLink.classList.toggle("active", isHomePath(current));
-    const kakomonLink = document.getElementById("kakomonLink");
-    if (kakomonLink) kakomonLink.classList.toggle("active", isKakomonPath(current));
+    const tangoLink = document.getElementById("tangoLink");
+    if (tangoLink) tangoLink.classList.toggle("active", isTangoPath(current));
   }
 
-  function isKakomonPath(path) {
-    return path === "kakomon" || path.startsWith("kakomon/");
+  function isTangoPath(path) {
+    return path === "tango" || path.startsWith("tango/");
   }
 
-  function renderKakomonPage() {
-    enterAppPage("過去問をながめる");
-    if (!window.DocKakomon) {
-      contentEl.innerHTML = '<p class="error">過去問データを読み込めませんでした。</p>';
+  // 過去問の単語帳は「キーワードをながめる」と同じ画面を単語帳のデータで表示する
+  function renderTangoPage(path) {
+    enterAppPage("過去問の単語帳");
+    if (!window.DocKeywords) {
+      contentEl.innerHTML = '<p class="error">単語帳を読み込めませんでした。</p>';
     } else {
-      window.DocKakomon.render(contentEl);
+      const route = path.slice("tango/".length);
+      const scope = route.startsWith("@") ? route.slice(1) : "";
+      window.DocKeywords.render(contentEl, { manifest, folderLabel, scope, mode: "tango" });
     }
     highlightActiveNav();
   }
@@ -629,9 +632,8 @@
 
   async function renderPath(path) {
     if (window.DocKeywords) window.DocKeywords.stop();
-    if (window.DocKakomon) window.DocKakomon.stop();
-    if (isKakomonPath(path)) {
-      renderKakomonPage();
+    if (isTangoPath(path)) {
+      renderTangoPage(path);
       return;
     }
     if (isHomePath(path)) {

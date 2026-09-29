@@ -64,8 +64,9 @@
     if (all.weak) actions.append(actionCard("#/quiz/@weak", "要復習の問題を解く", all.weak + " 問（前回まちがえた問題）", !last));
     actions.append(actionCard("#/quiz/@random", "ランダムに10問", "全範囲からの腕試し", !last && !all.weak));
     actions.append(actionCard("#/keywords", "キーワードをながめる", "重要語を自動で切り替え表示"));
-    if (window.DocKakomon && window.DocKakomon.count()) {
-      actions.append(actionCard("#/kakomon", "過去問をながめる", "午前Ⅱ・午後の問題と解答例（直近3年）"));
+    const tangoCount = window.DocKeywords ? window.DocKeywords.count("tango") : 0;
+    if (tangoCount) {
+      actions.append(actionCard("#/tango", "過去問の単語帳", "過去問に出た重要語 " + tangoCount + " 語"));
     }
     container.append(actions);
 

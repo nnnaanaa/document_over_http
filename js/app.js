@@ -267,6 +267,22 @@
     if (keywordsLink) keywordsLink.classList.toggle("active", isKeywordsPath(current));
     const homeLink = document.getElementById("homeLink");
     if (homeLink) homeLink.classList.toggle("active", isHomePath(current));
+    const kakomonLink = document.getElementById("kakomonLink");
+    if (kakomonLink) kakomonLink.classList.toggle("active", isKakomonPath(current));
+  }
+
+  function isKakomonPath(path) {
+    return path === "kakomon" || path.startsWith("kakomon/");
+  }
+
+  function renderKakomonPage() {
+    enterAppPage("過去問をながめる");
+    if (!window.DocKakomon) {
+      contentEl.innerHTML = '<p class="error">過去問データを読み込めませんでした。</p>';
+    } else {
+      window.DocKakomon.render(contentEl);
+    }
+    highlightActiveNav();
   }
 
   const LAST_DOC_KEY = "doc-viewer-last";
@@ -613,6 +629,11 @@
 
   async function renderPath(path) {
     if (window.DocKeywords) window.DocKeywords.stop();
+    if (window.DocKakomon) window.DocKakomon.stop();
+    if (isKakomonPath(path)) {
+      renderKakomonPage();
+      return;
+    }
     if (isHomePath(path)) {
       renderHomePage();
       return;

@@ -8,6 +8,8 @@
   const MODES = {
     keywords: {
       prefsKey: "doc-keywords-prefs",
+      knownKey: "doc-keywords-known",
+      idOf: (k) => k.doc + "|" + k.term,
       title: "キーワードをながめる",
       lead: "重要な用語が一定間隔で自動的に切り替わります。ながめておくだけで要点を復習できます。全画面にすると画面いっぱいに表示します。",
       empty: "keywords.js にキーワードが登録されていません。",
@@ -15,6 +17,8 @@
     },
     tango: {
       prefsKey: "doc-tango-prefs",
+      knownKey: "doc-tango-known",
+      idOf: (k) => k.term,
       title: "過去問の単語帳",
       lead: "ネットワークスペシャリスト試験の過去問（平成21年度〜令和7年度）に出てきた重要語が一定間隔で自動的に切り替わります。ながめておくだけで頻出の用語を復習できます。",
       empty: "tango.js に単語が登録されていません。",
@@ -34,6 +38,25 @@
   let timer = null;
   let wakeLock = null;
   let prefs = loadPrefs();
+  let known = loadKnown();
+
+  // 「覚えた」にした語の記録（語のIDの一覧）。キーワードと単語帳で別々に保存する
+  function loadKnown() {
+    try {
+      const list = JSON.parse(localStorage.getItem(mode.knownKey) || "[]");
+      return new Set(Array.isArray(list) ? list : []);
+    } catch {
+      return new Set();
+    }
+  }
+  function saveKnown() {
+    try {
+      localStorage.setItem(mode.knownKey, JSON.stringify([...known]));
+    } catch {
+      /* 保存できなくても動作には影響しない */
+    }
+  }
+  const isKnown = (k) => known.has(mode.idOf(k));
 
   function loadPrefs() {
     let p = {};
@@ -47,6 +70,7 @@
       interval: INTERVALS.includes(p.interval) ? p.interval : 5,
       shuffle: p.shuffle !== false,
       recall: p.recall === true,
+      hideKnown: p.hideKnown !== false,
     };
   }
   function savePrefs() {
@@ -124,7 +148,8 @@
 
   function buildDeck() {
     // 資料のキーワードは docs.js の並び順で並べ、シャッフルしない場合は資料の順に流れるようにする
-    const list = keywordsIn(prefs.scope);
+    let list = keywordsIn(prefs.scope);
+    if (prefs.hideKnown) list = list.filter((k) => !isKnown(k));
     if (mode === MODES.keywords) {
       const order = new Map(orderedDocs().map((p, i) => [p, i]));
       list.sort((a, b) => (order.get(a.doc) ?? 0) - (order.get(b.doc) ?? 0));
@@ -181,6 +206,7 @@
       savePrefs();
       buildDeck();
       showCard();
+      updateKnownStatus();
     });
     scopeField.append(scopeSelect);
 
@@ -224,10 +250,42 @@
     });
     recallField.append(recallInput, el("span", null, "説明を後から表示（思い出す練習）"));
 
+    const hideField = el("label", "kw-check");
+    const hideInput = el("input");
+    hideInput.type = "checkbox";
+    hideInput.checked = prefs.hideKnown;
+    hideInput.addEventListener("change", () => {
+      prefs.hideKnown = hideInput.checked;
+      savePrefs();
+      buildDeck();
+      showCard();
+    });
+    hideField.append(hideInput, el("span", null, "「覚えた」語を除く"));
+
     const checks = el("div", "kw-checks");
-    checks.append(shuffleField, recallField);
+    checks.append(shuffleField, recallField, hideField);
     bar.append(scopeField, intervalField, checks);
     c.append(bar);
+
+    // この範囲で何語覚えたかの進み具合と，記録のリセット
+    const status = el("div", "kw-known-status");
+    const statusText = el("span", "kw-known-text");
+    const statusBar = el("div", "home-bar kw-known-bar");
+    statusBar.append(el("div", "home-bar-fill"));
+    const reset = el("button", "quiz-link-button", "この範囲の記録をリセット");
+    reset.type = "button";
+    reset.addEventListener("click", () => {
+      const inScope = keywordsIn(prefs.scope).filter(isKnown);
+      if (!inScope.length) return;
+      if (!confirm("この範囲で「覚えた」にした " + inScope.length + " 語の記録を消去します。よろしいですか？")) return;
+      inScope.forEach((k) => known.delete(mode.idOf(k)));
+      saveKnown();
+      buildDeck();
+      showCard();
+      updateKnownStatus();
+    });
+    status.append(statusText, statusBar, reset);
+    c.append(status);
 
     const stage = el("div", "kw-stage");
     stage.tabIndex = -1;
@@ -272,13 +330,19 @@
         "kw-btn-full"
       )
     );
+    const knownBtn = el("button", "kw-known-btn");
+    knownBtn.type = "button";
+    knownBtn.title = "覚えた（K）";
+    knownBtn.addEventListener("click", toggleKnown);
     const counter = el("span", "kw-counter");
+    const right = el("div", "kw-footer-right");
+    right.append(knownBtn, counter);
     const footer = el("div", "kw-footer");
-    footer.append(buttons, counter);
+    footer.append(buttons, right);
 
     stage.append(card, progress, footer);
     c.append(stage);
-    c.append(el("p", "quiz-hint", "キーボード: Space で一時停止 / ← → で前後 / F で全画面"));
+    c.append(el("p", "quiz-hint", "キーボード: Space で一時停止 / ← → で前後 / K で覚えた / F で全画面"));
     if (mode === MODES.tango) {
       const note = el(
         "p",
@@ -295,8 +359,50 @@
 
     buildDeck();
     showCard();
+    updateKnownStatus();
     setPlaying(true);
     start();
+  }
+
+  function updateKnownStatus() {
+    const c = ctx && ctx.container;
+    if (!c || !c.querySelector(".kw-known-status")) return;
+    const inScope = keywordsIn(prefs.scope);
+    const n = inScope.filter(isKnown).length;
+    c.querySelector(".kw-known-text").textContent = "この範囲で覚えた語：" + n + " / " + inScope.length + " 語";
+    c.querySelector(".kw-known-bar .home-bar-fill").style.width = inScope.length ? ((n / inScope.length) * 100).toFixed(1) + "%" : "0%";
+    c.querySelector(".kw-known-status .quiz-link-button").hidden = n === 0;
+  }
+
+  function updateKnownButton() {
+    const btn = ctx && ctx.container.querySelector(".kw-known-btn");
+    if (!btn) return;
+    const k = deck[index];
+    btn.hidden = !k;
+    if (!k) return;
+    const on = isKnown(k);
+    btn.classList.toggle("is-known", on);
+    btn.textContent = on ? "✓ 覚えた（取消）" : "覚えた";
+    btn.setAttribute("aria-pressed", String(on));
+  }
+
+  // 今のカードの「覚えた」を切り替える。除外表示中は覚えた語をすぐ流れから外す
+  function toggleKnown() {
+    const k = deck[index];
+    if (!k) return;
+    const id = mode.idOf(k);
+    if (known.has(id)) known.delete(id);
+    else known.add(id);
+    saveKnown();
+    if (prefs.hideKnown && known.has(id)) {
+      deck.splice(index, 1);
+      if (index >= deck.length) index = 0;
+      elapsed = 0;
+      showCard();
+    } else {
+      updateKnownButton();
+    }
+    updateKnownStatus();
   }
 
   function showCard() {
@@ -305,7 +411,11 @@
     if (!card) return;
     card.innerHTML = "";
     if (!deck.length) {
-      card.append(el("div", "kw-term", "キーワードがありません"));
+      const allKnown = prefs.hideKnown && keywordsIn(prefs.scope).length > 0;
+      card.append(el("div", "kw-term", allKnown ? "この範囲はすべて「覚えた」になりました" : "キーワードがありません"));
+      if (allKnown) card.append(el("div", "kw-desc", "「覚えた」語を除くのチェックを外すか，記録をリセットすると，もう一度ながめられます。"));
+      c.querySelector(".kw-counter").textContent = "0 / 0";
+      updateKnownButton();
       return;
     }
     const k = deck[index];
@@ -328,6 +438,7 @@
     void card.offsetWidth;
     card.classList.add("kw-enter");
     c.querySelector(".kw-counter").textContent = index + 1 + " / " + deck.length;
+    updateKnownButton();
     updateProgress();
   }
 
@@ -446,6 +557,9 @@
     } else if (e.key === "f" || e.key === "F") {
       e.preventDefault();
       toggleFullscreen();
+    } else if (e.key === "k" || e.key === "K") {
+      e.preventDefault();
+      toggleKnown();
     }
   });
 
@@ -455,11 +569,22 @@
     count(modeName) {
       return (MODES[modeName] || MODES.keywords).load().length;
     },
+    // 「覚えた」にした語の数（今のデータに存在する語だけを数える）
+    knownCount(modeName) {
+      const m = MODES[modeName] || MODES.keywords;
+      try {
+        const ids = new Set(JSON.parse(localStorage.getItem(m.knownKey) || "[]"));
+        return m.load().filter((k) => ids.has(m.idOf(k))).length;
+      } catch {
+        return 0;
+      }
+    },
     render(container, options) {
       ctx = { container, manifest: options.manifest, folderLabel: options.folderLabel };
       mode = MODES[options.mode] || MODES.keywords;
       all = mode.load();
       prefs = loadPrefs();
+      known = loadKnown();
       if (options.scope) prefs.scope = options.scope;
       render();
     },

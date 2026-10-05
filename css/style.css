@@ -1011,6 +1011,34 @@ a:hover { color: var(--accent-hover); }
 .kw-stage.is-paused .kw-btn-play .kw-icon-pause { display: none; }
 .kw-btn span { display: inline-flex; }
 .kw-counter { font-size: 0.85rem; font-weight: 600; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+.kw-footer-right { display: flex; align-items: center; gap: 0.75rem; }
+.kw-known-btn {
+  padding: 0.45rem 1rem;
+  border: 1.5px solid var(--ok);
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--ok);
+  font: inherit;
+  font-size: 0.86rem;
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease;
+}
+.kw-known-btn:hover { background: var(--ok-bg); }
+.kw-known-btn.is-known { background: var(--ok); color: #fff; }
+[data-theme="dark"] .kw-known-btn.is-known { color: #16181d; }
+.kw-known-status {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin: -0.25rem 0 0.9rem;
+  font-size: 0.82rem;
+  color: var(--text-muted);
+}
+.kw-known-bar { flex: 1 1 140px; max-width: 260px; }
+.kw-known-status .quiz-link-button { padding: 0; font-size: 0.8rem; }
 .markdown-body .kw-note { margin-top: 1rem; font-size: 0.78rem; line-height: 1.7; color: var(--text-muted); }
 
 /* 全画面ではカードを画面いっぱいに広げ、文字も大きくする */

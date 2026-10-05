@@ -66,7 +66,10 @@
     actions.append(actionCard("#/keywords", "キーワードをながめる", "重要語を自動で切り替え表示"));
     const tangoCount = window.DocKeywords ? window.DocKeywords.count("tango") : 0;
     if (tangoCount) {
-      actions.append(actionCard("#/tango", "過去問の単語帳", "過去問に出た重要語 " + tangoCount + " 語"));
+      const tangoKnown = window.DocKeywords.knownCount("tango");
+      actions.append(
+        actionCard("#/tango", "過去問の単語帳", "過去問に出た重要語 " + tangoCount + " 語" + (tangoKnown ? "・覚えた " + tangoKnown + " 語" : ""))
+      );
     }
     container.append(actions);
 

@@ -441,12 +441,20 @@
 
     const list = el("ol", "quiz-choices");
     item.choices.forEach((choice, i) => {
-      const li = el("li");
+      const li = el("li", "quiz-choice-row");
       const b = el("button", "quiz-choice");
       b.type = "button";
       b.append(el("span", "quiz-choice-key", String(i + 1)), el("span", "quiz-choice-text", choice));
       b.addEventListener("click", () => answer(i));
-      li.append(b);
+      // 明らかに違う選択肢を取り消し線で消す（もう一度押すと元に戻る）
+      const strike = el("button", "quiz-strike");
+      strike.type = "button";
+      strike.setAttribute("aria-label", "選択肢" + (i + 1) + "を消す");
+      strike.title = "この選択肢を消す（Shift + " + (i + 1) + "）";
+      strike.innerHTML =
+        '<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>';
+      strike.addEventListener("click", () => toggleStrike(i));
+      li.append(b, strike);
       list.append(li);
     });
     card.append(list);
@@ -462,13 +470,28 @@
     actions.append(button("中断して設定に戻る", "quiz-link-button", renderSetup), next);
     c.append(actions);
 
-    c.append(el("p", "quiz-hint", "キーボード: 1〜4 で解答 / Enter で次へ"));
+    c.append(el("p", "quiz-hint", "キーボード: 1〜4 で解答 / Shift + 1〜4 で選択肢を消す / Enter で次へ"));
     scrollToTop();
+  }
+
+  function toggleStrike(i) {
+    const item = session.items[session.index];
+    if (item.picked !== null) return;
+    const row = ctx.container.querySelectorAll(".quiz-choice-row")[i];
+    if (!row) return;
+    const on = row.classList.toggle("is-struck");
+    const strike = row.querySelector(".quiz-strike");
+    strike.setAttribute("aria-pressed", String(on));
+    strike.setAttribute("aria-label", "選択肢" + (i + 1) + (on ? "を戻す" : "を消す"));
+    strike.title = (on ? "この選択肢を戻す" : "この選択肢を消す") + "（Shift + " + (i + 1) + "）";
   }
 
   function answer(index) {
     const item = session.items[session.index];
     if (item.picked !== null) return;
+    // 消した選択肢は，戻すまで解答できない（誤タップ防止）
+    const row = ctx.container.querySelectorAll(".quiz-choice-row")[index];
+    if (row && row.classList.contains("is-struck")) return;
     item.picked = index;
     item.correct = item.choices[index] === item.q.answer;
     record(item.q, item.correct);
@@ -476,9 +499,12 @@
     const c = ctx.container;
     c.querySelectorAll(".quiz-choice").forEach((b, i) => {
       b.disabled = true;
-      if (item.choices[i] === item.q.answer) b.classList.add("is-correct");
-      else if (i === index) b.classList.add("is-wrong");
+      if (item.choices[i] === item.q.answer) {
+        b.classList.add("is-correct");
+        b.closest(".quiz-choice-row").classList.remove("is-struck");
+      } else if (i === index) b.classList.add("is-wrong");
     });
+    c.querySelectorAll(".quiz-strike").forEach((s) => (s.disabled = true));
 
     const feedback = c.querySelector(".quiz-feedback");
     feedback.className = "quiz-feedback " + (item.correct ? "is-correct" : "is-wrong");
@@ -572,7 +598,11 @@
     if (e.target.closest && e.target.closest("input, select, textarea")) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const item = session.items[session.index];
-    if (item.picked === null && /^[1-4]$/.test(e.key)) {
+    const digit = /^Digit[1-4]$/.test(e.code) ? Number(e.code.slice(5)) : 0;
+    if (item.picked === null && e.shiftKey && digit) {
+      e.preventDefault();
+      if (digit <= item.choices.length) toggleStrike(digit - 1);
+    } else if (item.picked === null && /^[1-4]$/.test(e.key)) {
       e.preventDefault();
       if (Number(e.key) <= item.choices.length) answer(Number(e.key) - 1);
     } else if (item.picked !== null && (e.key === "ArrowRight" || (e.key === "Enter" && !e.target.closest("button")))) {

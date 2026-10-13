@@ -49,6 +49,9 @@
 
 * { box-sizing: border-box; }
 
+/* display を指定したクラス（ボタン等）でも hidden 属性で確実に隠れるようにする */
+[hidden] { display: none !important; }
+
 html, body {
   margin: 0;
   height: 100%;
@@ -785,6 +788,37 @@ a:hover { color: var(--accent-hover); }
 .quiz-choice.is-wrong { border-color: var(--ng); background: var(--ng-bg); color: var(--text-strong); }
 .quiz-choice.is-wrong .quiz-choice-key { background: var(--ng); color: #fff; }
 .quiz-choice:disabled:not(.is-correct):not(.is-wrong) { opacity: 0.55; }
+
+/* 選択肢を消す（取り消し線） */
+.markdown-body .quiz-choices .quiz-choice-row { display: flex; align-items: stretch; gap: 0.4rem; }
+.quiz-choice-row .quiz-choice { flex: 1; min-width: 0; }
+.quiz-strike {
+  flex-shrink: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  border: 1.5px solid var(--border);
+  border-radius: 10px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+  cursor: pointer;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+.quiz-strike:hover:not(:disabled) { border-color: var(--ng); color: var(--ng); background: var(--ng-bg); }
+.quiz-strike:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.quiz-strike:disabled { opacity: 0.35; cursor: default; }
+.quiz-choice-row.is-struck .quiz-strike { border-color: var(--ng); background: var(--ng); color: #fff; }
+.quiz-choice-row.is-struck .quiz-choice { cursor: not-allowed; border-style: dashed; background: var(--sidebar-bg); }
+.quiz-choice-row.is-struck .quiz-choice:hover:not(:disabled) { border-color: var(--border-strong); background: var(--sidebar-bg); }
+.quiz-choice-row.is-struck .quiz-choice-text {
+  text-decoration: line-through;
+  text-decoration-thickness: 2px;
+  text-decoration-color: var(--ng);
+  color: var(--text-muted);
+  opacity: 0.7;
+}
+.quiz-choice-row.is-struck .quiz-choice-key { opacity: 0.5; }
 
 .quiz-feedback {
   margin-top: 1.25rem;

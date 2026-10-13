@@ -1,6 +1,6 @@
 // 四択問題のデータ。docs.js の資料パスごとに問題を書く。
 // answer が正解、wrong が不正解の選択肢（3つ以上）。表示時に選択肢の順番はシャッフルされる。
-// explain は解答後に表示される解説。
+// explain は解答後に表示される解説。ref は「資料で確認する」で資料内を探す語句（正解が資料の文言を言い換えている場合に指定）。
 // 問題文(q)を書き換えると、その問題の成績記録はリセットされる。
 window.QUIZ_QUESTIONS = [
   // ---- IPアドレス ----
@@ -47,7 +47,7 @@ window.QUIZ_QUESTIONS = [
 
   { doc: "network/lan/vlan-vxlan.md", q: "IEEE 802.1Q タグVLANフレームの TPID の固定値はどれか。", answer: "0x8100", wrong: ["0x0800", "0x86DD", "0x8847"], explain: "TPID=0x8100 でタグ付きフレームであることを示す。" },
   { doc: "network/lan/vlan-vxlan.md", q: "VLANヘッダの VID のビット数として正しいものはどれか。", answer: "12bit（0〜4095）", wrong: ["3bit（0〜7）", "24bit（約1677万）", "16bit（0〜65535）"], explain: "VIDは12bit。3bitはPCP、24bitはVXLANのVNI。" },
-  { doc: "network/lan/vlan-vxlan.md", q: "VXLAN の VNI のビット数と識別できるネットワーク数はどれか。", answer: "24bit・約1677万", wrong: ["12bit・4096", "16bit・約6.5万", "32bit・約43億"], explain: "24bit の VNI で 2^24 = 16,777,216 のL2ネットワークを識別できる。" },
+  { doc: "network/lan/vlan-vxlan.md", q: "VXLAN の VNI のビット数と識別できるネットワーク数はどれか。", answer: "24bit・約1677万", ref: "24bit", wrong: ["12bit・4096", "16bit・約6.5万", "32bit・約43億"], explain: "24bit の VNI で 2^24 = 16,777,216 のL2ネットワークを識別できる。" },
   { doc: "network/lan/vlan-vxlan.md", q: "VXLAN で一般的に使われるポートはどれか。", answer: "UDP 4789", wrong: ["UDP 4500", "TCP 4789", "UDP 4739"], explain: "VXLAN は UDP 4789。UDP 4500 は IPsec の NATトラバーサル、4739 は IPFIX。" },
   { doc: "network/lan/vlan-vxlan.md", q: "VXLANトンネルを終端する役割を持つスイッチやインターフェースを何と呼ぶか。", answer: "VTEP", wrong: ["VNI", "LSR", "PE"], explain: "VTEP (VXLAN Tunnel Endpoint)。障害に備えて Loopback にアドレスを割り当てることが多い。" },
   { doc: "network/lan/vlan-vxlan.md", q: "EVPN が VTEP と VM の紐づけを学習するために使うプロトコルはどれか。", answer: "MP-BGP", wrong: ["Multicast", "OSPF", "LLDP"], explain: "EVPN は MP-BGP で学習するため、Flood & Learn と違い最初からマルチキャスト通信が生じない。" },
@@ -60,10 +60,10 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/lan/wifi.md", q: "複数のBSSから構成される無線ネットワーク(ESS)の識別子はどれか。", answer: "ESSID（SSID）", wrong: ["BSSID", "VNI", "VLAN ID"], explain: "ESSはESSID/SSIDで識別する。複数のAPに同じSSIDを付与して構成する。" },
   { doc: "network/lan/wifi.md", q: "BSSID に使われることが多い値はどれか。", answer: "APのMACアドレス", wrong: ["APのIPアドレス", "任意の文字列", "クライアントのMACアドレス"], explain: "1つのAP配下のネットワーク(BSS)の識別子で、APのMACアドレスが使われることが多い。" },
   { doc: "network/lan/wifi.md", q: "WPA3（パーソナル）で使われる鍵交換方式はどれか。", answer: "SAE", wrong: ["PSK", "TKIP", "RC4"], explain: "SAE は PSK と公開鍵暗号を組み合わせた方式で、端末ごとの個別暗号化を実現する。" },
-  { doc: "network/lan/wifi.md", q: "2.4GHz帯の特徴として正しいものはどれか。", answer: "障害物に強いが、電子レンジやBluetoothと干渉しやすい", wrong: ["干渉が少なく高速だが、障害物に弱い", "3つの周波数帯の中で最も障害物に弱い", "Wi-Fi6以降でのみ利用できる"], explain: "5GHzや6GHzは干渉が少なく高速だが障害物に弱い。" },
+  { doc: "network/lan/wifi.md", q: "2.4GHz帯の特徴として正しいものはどれか。", answer: "障害物に強いが、電子レンジやBluetoothと干渉しやすい", ref: "電子レンジ", wrong: ["干渉が少なく高速だが、障害物に弱い", "3つの周波数帯の中で最も障害物に弱い", "Wi-Fi6以降でのみ利用できる"], explain: "5GHzや6GHzは干渉が少なく高速だが障害物に弱い。" },
   { doc: "network/lan/wifi.md", q: "WEP が使用する暗号化アルゴリズムはどれか。", answer: "RC4", wrong: ["AES", "TKIP", "SAE"], explain: "WEP=RC4、WPA=TKIP、WPA2/WPA3=AES。WEPとWPAは脆弱なため推奨されない。" },
   { doc: "network/lan/wifi.md", q: "APから定期的に発信され、APの存在をクライアントに知らせる信号はどれか。", answer: "ビーコン信号", wrong: ["BPDU", "VRRPアドバタイズメント", "LLDPフレーム"], explain: "ビーコン信号でクライアントはAPを見つける。" },
-  { doc: "network/lan/wifi.md", q: "WLC（ワイヤレスLANコントローラー）がある環境のローミングの特徴はどれか。", answer: "新しいAPが受けた認証要求をWLCに問い合わせて認証を完了する", wrong: ["クライアントが新しいAPに対して毎回ゼロから再認証する", "SSIDの異なるAPへ自動的に移動する", "ローミング中はBSSIDが変わらない"], explain: "WLCがない場合は新しいAPに対して再認証を行う。" },
+  { doc: "network/lan/wifi.md", q: "WLC（ワイヤレスLANコントローラー）がある環境のローミングの特徴はどれか。", answer: "新しいAPが受けた認証要求をWLCに問い合わせて認証を完了する", ref: "WLCに問い合わせ", wrong: ["クライアントが新しいAPに対して毎回ゼロから再認証する", "SSIDの異なるAPへ自動的に移動する", "ローミング中はBSSIDが変わらない"], explain: "WLCがない場合は新しいAPに対して再認証を行う。" },
 
   // ---- WAN・VPN ----
   { doc: "network/wan-vpn/wan-vpn.md", q: "広域イーサネットが動作するレイヤーと利用する技術の組み合わせはどれか。", answer: "L2 / IEEE 802.1Q のタグVLAN", wrong: ["L3 / MPLS", "L1 / 専用の物理回線", "L4 / SSL-VPN"], explain: "広域イーサネットはL2、IP-VPNはL3でMPLS、専用線はL1。" },
@@ -82,8 +82,8 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/wan-vpn/ipsec.md", q: "IKE が使用するポートはどれか。", answer: "UDP 500 または 4500", wrong: ["TCP 443", "UDP 4789", "TCP 500"], explain: "IKE は UDP 500。NATトラバーサル時は UDP 4500。" },
   { doc: "network/wan-vpn/ipsec.md", q: "ESP のトンネルモードで暗号化される範囲はどれか。", answer: "元のIPヘッダを含むIPパケット全体 + ESPトレーラ", wrong: ["IPパケットのペイロード部分 + ESPトレーラ", "新IPヘッダを含むパケット全体", "ESPヘッダと認証データのみ"], explain: "トンネルモードは元のIPヘッダも暗号化され、新しいIPヘッダが付加される。ペイロードのみはトランスポートモード。" },
   { doc: "network/wan-vpn/ipsec.md", q: "拠点間VPNで一般的に使われる ESP のモードはどれか。", answer: "トンネルモード", wrong: ["トランスポートモード", "アグレッシブモード", "クイックモード"], explain: "トランスポートモードはクライアントとサーバー間などエンドツーエンドの通信で使う。" },
-  { doc: "network/wan-vpn/ipsec.md", q: "NATトラバーサルで IPsec パケットに追加されるものはどれか。", answer: "ポート4500を使う専用のUDPヘッダ", wrong: ["ポート443を使うTCPヘッダ", "AHヘッダ", "新しいMPLSラベル"], explain: "ESPはポート番号を持たずNAPTを通過できないため、UDPヘッダを追加する。" },
-  { doc: "network/wan-vpn/ipsec.md", q: "NATトラバーサルが必要になる理由として正しいものはどれか。", answer: "ESPはL3プロトコルでポート番号情報を持たず、NAPTを適用できないため", wrong: ["ESPはUDPを使うためNAPTで破棄されるため", "IKEがTCPで動作するため", "トランスポートモードではIPヘッダが暗号化されるため"], explain: "加えて、ISAKMP の UDP 500 が NAPT の影響を受けることも理由の一つ。" },
+  { doc: "network/wan-vpn/ipsec.md", q: "NATトラバーサルで IPsec パケットに追加されるものはどれか。", answer: "ポート4500を使う専用のUDPヘッダ", ref: "port 4500", wrong: ["ポート443を使うTCPヘッダ", "AHヘッダ", "新しいMPLSラベル"], explain: "ESPはポート番号を持たずNAPTを通過できないため、UDPヘッダを追加する。" },
+  { doc: "network/wan-vpn/ipsec.md", q: "NATトラバーサルが必要になる理由として正しいものはどれか。", answer: "ESPはL3プロトコルでポート番号情報を持たず、NAPTを適用できないため", ref: "NAPTに対応していない", wrong: ["ESPはUDPを使うためNAPTで破棄されるため", "IKEがTCPで動作するため", "トランスポートモードではIPヘッダが暗号化されるため"], explain: "加えて、ISAKMP の UDP 500 が NAPT の影響を受けることも理由の一つ。" },
   { doc: "network/wan-vpn/ipsec.md", q: "IKEv1 の Phase1 で、6つのメッセージを使い対向機器のIPアドレスも認証するモードはどれか。", answer: "Main Mode", wrong: ["Aggressive Mode", "Quick Mode", "Transport Mode"], explain: "Aggressive Mode は3メッセージでIPアドレスを認証しない。Quick Mode は Phase2。" },
   { doc: "network/wan-vpn/ipsec.md", q: "IKEv2 で IKE SA と IPsec SA を確立するのに必要なメッセージ数はどれか。", answer: "4つ", wrong: ["6つ", "3つ", "9つ"], explain: "IKEv2 は Phase や Mode の概念がなく、4つのメッセージで両方の SA を確立できる。" },
   { doc: "network/wan-vpn/ipsec.md", q: "SA（Security Association）について正しいものはどれか。", answer: "1方向のみ確立されるため、各フェーズで最低2本必要", wrong: ["双方向なので1本で足りる", "Phase2でのみ確立される", "IKEv2では確立しない"], explain: "SAは暗号化通信のためのトンネル。1方向なので送受信で2本必要。" },
@@ -92,13 +92,13 @@ window.QUIZ_QUESTIONS = [
 
   { doc: "network/wan-vpn/ppp.md", q: "CHAP の説明として正しいものはどれか。", answer: "チャレンジ(乱数)とパスワードをMD5でハッシュ化して返送する", wrong: ["IDとパスワードを平文でやり取りする", "証明書を使って相互認証する", "公開鍵暗号で共通鍵を交換する"], explain: "平文でやり取りするのは PAP。CHAP は盗聴に強い。" },
   { doc: "network/wan-vpn/ppp.md", q: "PPPoE ヘッダのサイズはどれか。", answer: "6バイト", wrong: ["2バイト", "14バイト", "20バイト"], explain: "PPPヘッダ=2バイト、Ethernetヘッダ=14バイト、IPヘッダ=20バイト（オプションで最大60）。" },
-  { doc: "network/wan-vpn/ppp.md", q: "PPPoE が必要になる理由として正しいものはどれか。", answer: "Ethernetは認証機能を持たないため", wrong: ["EthernetはIPパケットを運べないため", "PPPは暗号化が必須のため", "Ethernetは1:1の接続しかできないため"], explain: "ISPのユーザー名とパスワードで認証するため、Ethernet上でPPPを使う。" },
+  { doc: "network/wan-vpn/ppp.md", q: "PPPoE が必要になる理由として正しいものはどれか。", answer: "Ethernetは認証機能を持たないため", ref: "認証機能を持たない", wrong: ["EthernetはIPパケットを運べないため", "PPPは暗号化が必須のため", "Ethernetは1:1の接続しかできないため"], explain: "ISPのユーザー名とパスワードで認証するため、Ethernet上でPPPを使う。" },
   { doc: "network/wan-vpn/ppp.md", q: "PPP を拡張して追加の認証機能を実装し、IEEE 802.1X などで使われるものはどれか。", answer: "EAP", wrong: ["CHAP", "PPTP", "PAP"], explain: "EAP は PPP の拡張。PPTP は PPP を応用した VPN の L2トンネリングプロトコル。" },
   { doc: "network/wan-vpn/ppp.md", q: "PPP が動作するレイヤーはどれか。", answer: "データリンク層（L2）", wrong: ["物理層（L1）", "ネットワーク層（L3）", "トランスポート層（L4）"], explain: "PPP は専用線やISDNなど1:1の接続で使うデータリンク層のプロトコル。" },
 
   // ---- ルーティング ----
   { doc: "network/routing/igp.md", q: "RIP のルートポイズニングで、到達不能を示すホップ数はどれか。", answer: "16", wrong: ["15", "255", "30"], explain: "情報を流さないのではなく、最大値の16ホップとして通知する。" },
-  { doc: "network/routing/igp.md", q: "スプリットホライズンの説明として正しいものはどれか。", answer: "学習した経路情報を、学習したインターフェースへ送り返さない", wrong: ["無効になった経路を逆方向に「無効」として送信する", "到達不能な経路をホップ数16で通知する", "30秒ごとに全経路を送信する"], explain: "「無効」を逆方向に送るのはポイズンリバース（スプリットホライズンより優先）。" },
+  { doc: "network/routing/igp.md", q: "スプリットホライズンの説明として正しいものはどれか。", answer: "学習した経路情報を、学習したインターフェースへ送り返さない", ref: "分割ホライズン", wrong: ["無効になった経路を逆方向に「無効」として送信する", "到達不能な経路をホップ数16で通知する", "30秒ごとに全経路を送信する"], explain: "「無効」を逆方向に送るのはポイズンリバース（スプリットホライズンより優先）。" },
   { doc: "network/routing/igp.md", q: "RIP の定期更新の間隔はどれか。", answer: "30秒", wrong: ["10秒", "60秒", "90秒"], explain: "30秒ごとの更新のためコンバージェンスが遅い。" },
   { doc: "network/routing/igp.md", q: "クラスレスに対応した RIP のバージョンはどれか。", answer: "RIPv2", wrong: ["RIPv1", "RIPng", "RIPv3"], explain: "RIPv1はクラスフル、RIPngはIPv6用。" },
   { doc: "network/routing/igp.md", q: "OSPF で指名ルータ(DR)が生成する LSA はどれか。", answer: "Type2（ネットワークLSA）", wrong: ["Type1（ルーターLSA）", "Type3（ネットワークサマリーLSA）", "Type5（AS外部LSA）"], explain: "Type1は全OSPFルータ、Type3/4はABR、Type5はASBRが生成する。" },
@@ -116,7 +116,7 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/routing/bgp.md", q: "BGP セッションの生存確認のために定期的に送られるメッセージはどれか。", answer: "KEEPALIVE", wrong: ["OPEN", "UPDATE", "NOTIFICATION"], explain: "OPEN=セッション確立、UPDATE=ルート広告/更新、NOTIFICATION=エラー通知。" },
   { doc: "network/routing/bgp.md", q: "BGP が経路交換に使うポートはどれか。", answer: "TCP 179", wrong: ["UDP 179", "TCP 520", "UDP 520"], explain: "BGP は TCP 179 を使う。" },
 
-  { doc: "network/routing/reliability.md", q: "ECMP の説明として正しいものはどれか。", answer: "同じコストの複数経路を同時に利用する", wrong: ["コストが最も低い単一の経路だけを利用する", "障害時にのみ予備経路へ切り替える", "経路ごとに異なる暗号化を行う"], explain: "通常のルーティングは最低コストの単一経路を選ぶが、ECMPは同コスト経路を同時に使う。" },
+  { doc: "network/routing/reliability.md", q: "ECMP の説明として正しいものはどれか。", answer: "同じコストの複数経路を同時に利用する", ref: "同じコストの経路", wrong: ["コストが最も低い単一の経路だけを利用する", "障害時にのみ予備経路へ切り替える", "経路ごとに異なる暗号化を行う"], explain: "通常のルーティングは最低コストの単一経路を選ぶが、ECMPは同コスト経路を同時に使う。" },
   { doc: "network/routing/reliability.md", q: "ECMP の負荷分散で、パケット順序の乱れを防げる方式はどれか。", answer: "ハッシュベース（フロー単位で経路を固定）", wrong: ["ラウンドロビン方式", "ランダム方式", "帯域比率方式"], explain: "ラウンドロビンは順序が入れ替わる可能性があり、TCP通信ではあまり使われない。" },
   { doc: "network/routing/reliability.md", q: "BFD の特徴として正しいものはどれか。", answer: "50ミリ秒などの短い間隔で死活監視し、高速に障害を検知する", wrong: ["経路情報を交換して最短経路を計算する", "30秒間隔で経路を更新する", "複数経路にトラフィックを分散する"], explain: "BFD はオーバヘッドが少なくなるようシンプルに設計された死活監視プロトコル。" },
 
@@ -124,7 +124,7 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/routing/multicast.md", q: "VRRP 用に予約されているマルチキャストアドレスはどれか。", answer: "224.0.0.18", wrong: ["224.0.0.22", "224.0.0.13", "224.0.0.6"], explain: "224.0.0.22=IGMP、224.0.0.13=PIM、224.0.0.6=全OSPF DR/BDR。" },
   { doc: "network/routing/multicast.md", q: "組織内などのプライベート空間で使用されるマルチキャストアドレスの範囲はどれか。", answer: "239.0.0.0〜239.255.255.255", wrong: ["224.0.0.0〜224.0.0.255", "224.0.1.0〜238.255.255.255", "240.0.0.0〜255.255.255.255"], explain: "224.0.0.0〜224.0.0.255 はリンクローカル、224.0.1.0〜238.255.255.255 はグローバル。" },
   { doc: "network/routing/multicast.md", q: "マルチキャストMACアドレスの先頭部分はどれか。", answer: "01-00-5E", wrong: ["01-80-C2", "FF-FF-FF", "00-00-5E"], explain: "先頭24bitが01-00-5E、25ビット目は常に0で固定。" },
-  { doc: "network/routing/multicast.md", q: "224.100.1.1 と 224.228.1.1 が同じマルチキャストMACアドレスになる理由はどれか。", answer: "IPアドレスの下位23bitだけがMACアドレスにコピーされるため", wrong: ["上位8bitだけがMACアドレスにコピーされるため", "MACアドレスはランダムに割り当てられるため", "第2オクテットは常に0に変換されるため"], explain: "1:1にならない場合、受信端末はIPアドレスで自分宛てか判断する。" },
+  { doc: "network/routing/multicast.md", q: "224.100.1.1 と 224.228.1.1 が同じマルチキャストMACアドレスになる理由はどれか。", answer: "IPアドレスの下位23bitだけがMACアドレスにコピーされるため", ref: "下位23bit", wrong: ["上位8bitだけがMACアドレスにコピーされるため", "MACアドレスはランダムに割り当てられるため", "第2オクテットは常に0に変換されるため"], explain: "1:1にならない場合、受信端末はIPアドレスで自分宛てか判断する。" },
   { doc: "network/routing/multicast.md", q: "RP（Rendezvous Point）と join を用いて経路を決定する PIM のモードはどれか。", answer: "PIM-SM（スパースモード）", wrong: ["PIM-DM（デンスモード）", "PIM-SSM", "IGMPv3"], explain: "PIM-SMは受信端末が分散している環境(WAN)向け。PIM-DMはFlood & Prune方式。" },
   { doc: "network/routing/multicast.md", q: "PIM-DM の経路決定方式はどれか。", answer: "Flood & Prune", wrong: ["RP と join", "送信元指定", "Flood & Learn"], explain: "全ルーターにFloodし、不要なルーターをPruneする。受信端末が密集した環境向け。" },
   { doc: "network/routing/multicast.md", q: "IGMPv2 で追加された機能はどれか。", answer: "Leave Group による明示的な脱退", wrong: ["配信元を指定するソースフィルタ", "Membership Query による存在確認", "Membership Report による参加通知"], explain: "ソースフィルタはIGMPv3。Membership Query と Report はIGMPv1から存在する。" },
@@ -134,14 +134,14 @@ window.QUIZ_QUESTIONS = [
 
   // ---- 冗長化・負荷分散 ----
   { doc: "network/redundancy/vrrp.md", q: "VRRP アドバタイズメントの送信先アドレスはどれか。", answer: "224.0.0.18", wrong: ["224.0.0.1", "224.0.0.5", "255.255.255.255"], explain: "VRRP はマルチキャストアドレス 224.0.0.18 を使う。" },
-  { doc: "network/redundancy/vrrp.md", q: "VRRP の Master 選出方法として正しいものはどれか。", answer: "Priorityが最も大きいルーター。同じなら実IPアドレスが最も大きいルーター", wrong: ["Priorityが最も小さいルーター。同じならMACアドレスが最も小さいルーター", "最初に起動したルーター", "実IPアドレスが最も小さいルーター"], explain: "STPのルートブリッジ（最小が選ばれる）と混同しないこと。" },
+  { doc: "network/redundancy/vrrp.md", q: "VRRP の Master 選出方法として正しいものはどれか。", answer: "Priorityが最も大きいルーター。同じなら実IPアドレスが最も大きいルーター", ref: "Priorityが最も大きい", wrong: ["Priorityが最も小さいルーター。同じならMACアドレスが最も小さいルーター", "最初に起動したルーター", "実IPアドレスが最も小さいルーター"], explain: "STPのルートブリッジ（最小が選ばれる）と混同しないこと。" },
   { doc: "network/redundancy/vrrp.md", q: "VRRP の Preempt 機能の説明として正しいものはどれか。", answer: "より Priority の高いルーターが現れたとき、そのルーターが Master になる", wrong: ["Master がダウンするまで再選出を行わない", "Backup ルーターが常に負荷分散する", "アドバタイズメントの送信間隔を短くする"], explain: "通常は現在の Master がダウンするまで再選出は行われない。" },
   { doc: "network/redundancy/vrrp.md", q: "VRRP のグループを示す ID はどれか。", answer: "VRID", wrong: ["VNI", "VID", "SPI"], explain: "VRID（Virtual Router ID）のグループ内で Master/Backup を選出する。" },
 
-  { doc: "network/redundancy/load-balancer.md", q: "DSR（Direct Server Return）の説明として正しいものはどれか。", answer: "ワンアーム構成で、戻りの通信をLBを経由せず直接クライアントに返す", wrong: ["行きと戻りの通信を必ずLBで折り返す", "DNSで最も近いサーバーに振り分ける", "サーバーの代わりにSSL/TLS通信を終端する"], explain: "メリットはパフォーマンス向上、デメリットはSSL/TLSアクセラレータが使えないこと。" },
+  { doc: "network/redundancy/load-balancer.md", q: "DSR（Direct Server Return）の説明として正しいものはどれか。", answer: "ワンアーム構成で、戻りの通信をLBを経由せず直接クライアントに返す", ref: "LBを経由せずに直接クライアントに返す", wrong: ["行きと戻りの通信を必ずLBで折り返す", "DNSで最も近いサーバーに振り分ける", "サーバーの代わりにSSL/TLS通信を終端する"], explain: "メリットはパフォーマンス向上、デメリットはSSL/TLSアクセラレータが使えないこと。" },
   { doc: "network/redundancy/load-balancer.md", q: "DSR 構成でバックエンドサーバーが Loopback に設定するものはどれか。", answer: "LBの持つIPアドレス（VIP）", wrong: ["クライアントのIPアドレス", "デフォルトゲートウェイのアドレス", "マルチキャストアドレス"], explain: "LBはNATをしないため、サーバーはVIPを自分宛てとして受信し、送信元VIPで直接応答する。" },
   { doc: "network/redundancy/load-balancer.md", q: "Webアプリケーションの稼働状況を最も正確に監視できる死活監視方式はどれか。", answer: "HTTP/HTTPSプローブ", wrong: ["ICMPプローブ", "TCP/UDPプローブ", "ARPプローブ"], explain: "ICMPやTCP/UDPでは、Pingに応答してもWebサーバーはダウンしている状態などを判断できない。" },
-  { doc: "network/redundancy/load-balancer.md", q: "GSLB の一般的な実現方法はどれか。", answer: "DNSで送信元IPを基に最も近いエッジサーバーのIPアドレスを応答する", wrong: ["LBが戻りの通信を直接クライアントに返す", "Cookieのセッション IDで同じサーバーに振り分ける", "BGPで同コストの経路を分散する"], explain: "GSLB (Global Server Load Balancing) は DNS ベースが一般的。" },
+  { doc: "network/redundancy/load-balancer.md", q: "GSLB の一般的な実現方法はどれか。", answer: "DNSで送信元IPを基に最も近いエッジサーバーのIPアドレスを応答する", ref: "GSLB", wrong: ["LBが戻りの通信を直接クライアントに返す", "Cookieのセッション IDで同じサーバーに振り分ける", "BGPで同コストの経路を分散する"], explain: "GSLB (Global Server Load Balancing) は DNS ベースが一般的。" },
   { doc: "network/redundancy/load-balancer.md", q: "セキュリティ上の懸念があるため、あまり一般的ではないセッション維持方式はどれか。", answer: "URLパラメーターベース", wrong: ["IPベース", "Cookieベース", "IPのハッシュ値ベース"], explain: "URLに session_id=123 のようなパラメーターを含める方式。" },
   { doc: "network/redundancy/load-balancer.md", q: "SSL/TLS アクセラレーター機能と併せて利用されることが多いセッション維持方式はどれか。", answer: "Cookieベース", wrong: ["IPベース", "URLパラメーターベース", "DNSベース"], explain: "SSL/TLSを終端するとHTTPS通信の中身（Cookie）を確認できるため。" },
   { doc: "network/redundancy/load-balancer.md", q: "ワンアーム構成の説明として正しいものはどれか。", answer: "LBに直接サーバーを接続せず、ネットワークを介して間接的に接続する", wrong: ["クライアントとサーバーの間にLBを直列に挟む", "LBを2台で冗長化する", "LBを使わずにDNSで負荷分散する"], explain: "LBの追加や交換がしやすく、スケーラビリティに優れる。" },
@@ -154,7 +154,7 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/operation/qos.md", q: "IntServ で帯域の予約に使われるプロトコルはどれか。", answer: "RSVP", wrong: ["DSCP", "LLDP", "SIP"], explain: "RSVP (Resource Reservation Protocol) でネットワーク全体でリソースを予約する。" },
   { doc: "network/operation/qos.md", q: "L2 の優先度制御で CoS 値が格納されるフィールドはどれか。", answer: "IEEE 802.1Q VLANヘッダの PCP", wrong: ["IPヘッダの ToS", "VLANヘッダの TPID", "VLANヘッダの VID"], explain: "CoS はフレーム、DSCP はパケット（IPヘッダのToS）の優先度付けに使う。" },
   { doc: "network/operation/qos.md", q: "IP Precedence の説明として正しいものはどれか。", answer: "ToSフィールドの優先度ビット(3bit)のみを利用する方式", wrong: ["ToSフィールドの6bitを利用する方式", "VLANヘッダのPCPを利用する方式", "RSVPで帯域を予約する方式"], explain: "6bitを使うのはDSCP。" },
-  { doc: "network/operation/qos.md", q: "DSCP 値の下位3bit（フラグビット）の値が大きいとどうなるか。", answer: "破棄確率が高くなる", wrong: ["優先度が高くなる", "帯域が予約される", "暗号化が有効になる"], explain: "上位3bit（優先度ビット）は値が大きいほど優先度が高い。" },
+  { doc: "network/operation/qos.md", q: "DSCP 値の下位3bit（フラグビット）の値が大きいとどうなるか。", answer: "破棄確率が高くなる", ref: "破棄確率", wrong: ["優先度が高くなる", "帯域が予約される", "暗号化が有効になる"], explain: "上位3bit（優先度ビット）は値が大きいほど優先度が高い。" },
 
   { doc: "network/operation/monitoring.md", q: "SNMP の Trap（Agent → Manager）で使われるポートはどれか。", answer: "UDP 162", wrong: ["UDP 161", "UDP 514", "UDP 4739"], explain: "UDP 161 は Manager → Agent。514 は Syslog、4739 は IPFIX。" },
   { doc: "network/operation/monitoring.md", q: "Syslog が一般的に使うポートはどれか。", answer: "UDP 514", wrong: ["UDP 162", "TCP 443", "UDP 123"], explain: "監視対象の機器は Syslog サーバ宛に UDP 514 でログを転送する。" },
@@ -172,7 +172,7 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/protocol/tcp.md", q: "受信側が Window=0 を通知した後、送信側が最新のウィンドウサイズを要求するものはどれか。", answer: "ウィンドウプローブ", wrong: ["ウィンドウアップデート", "スライディングウィンドウ", "再送制御"], explain: "受信側はウィンドウアップデートで最新のウィンドウサイズを通知する。" },
   { doc: "network/protocol/tcp.md", q: "受信側が自身の負荷状況に応じてウィンドウサイズを変更する仕組みはどれか。", answer: "フロー制御", wrong: ["順序制御", "再送制御", "輻輳回避"], explain: "TCPヘッダのウィンドウサイズを変更して通知することで実現する。" },
   { doc: "network/protocol/tcp.md", q: "RFC 9293 でフラグフィールドに追加されたものはどれか。", answer: "CWR と ECE", wrong: ["URG と PSH", "SYN と FIN", "ACK と RST"], explain: "RFC 793 は 6bit（URG, ACK, PSH, RST, SYN, FIN）、RFC 9293 は 8bit。" },
-  { doc: "network/protocol/tcp.md", q: "TCP の CWR フラグの意味はどれか。", answer: "輻輳ウィンドウを減少させたことを通知する", wrong: ["輻輳の発生を通知する", "緊急ポインタが有効であることを示す", "コネクションを強制終了する"], explain: "輻輳の発生を通知するのは ECE。" },
+  { doc: "network/protocol/tcp.md", q: "TCP の CWR フラグの意味はどれか。", answer: "輻輳ウィンドウを減少させたことを通知する", ref: "減少させたことを通知", wrong: ["輻輳の発生を通知する", "緊急ポインタが有効であることを示す", "コネクションを強制終了する"], explain: "輻輳の発生を通知するのは ECE。" },
   { doc: "network/protocol/tcp.md", q: "Ackを待たずにまとめて送ったデータの一部にAckが返った時点で、次のデータを送る仕組みはどれか。", answer: "スライディングウィンドウ", wrong: ["フロー制御", "再送制御", "順序制御"], explain: "Ackが得られた分のウィンドウは空いたと判断して次を送る。" },
 
   { doc: "network/protocol/udp.md", q: "UDP ヘッダのサイズはどれか。", answer: "8 Byte（固定）", wrong: ["20 Byte（可変）", "4 Byte（固定）", "40 Byte（固定）"], explain: "UDPは可変長オプションを持たない8 Byteの固定ヘッダ。" },
@@ -192,18 +192,18 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/protocol/dhcp.md", q: "DHCP のリース期間が終了するとクライアントはどうするか。", answer: "DHCPサーバーにIPアドレスの更新を要求する", wrong: ["IPアドレスを自動的に固定化する", "別のサーバーにDiscoverを送り直すしかない", "即座に通信を停止する"], explain: "割り当てたIPアドレスはリース期間だけ提供される。" },
 
   { doc: "network/protocol/http.md", q: "HTTP ステータスコード 403 の意味はどれか。", answer: "クライアントの権限が不足している", wrong: ["認証情報が無効である", "リソースが存在しない", "リクエスト内容が無効である"], explain: "401 は認証情報が無効、404 はリソースが存在しない、400 はリクエストが無効。" },
-  { doc: "network/protocol/http.md", q: "HTTP ステータスコード 429 の意味はどれか。", answer: "短期間にリクエストを送りすぎてレートリミットを超えている", wrong: ["サーバー内部で予期せぬエラーが起きた", "恒久的に別のページへリダイレクトする", "ゲートウェイがサーバーから無効な応答を受けた"], explain: "APIなどでリクエスト数の制限がある場合に返される。" },
+  { doc: "network/protocol/http.md", q: "HTTP ステータスコード 429 の意味はどれか。", answer: "短期間にリクエストを送りすぎてレートリミットを超えている", ref: "429", wrong: ["サーバー内部で予期せぬエラーが起きた", "恒久的に別のページへリダイレクトする", "ゲートウェイがサーバーから無効な応答を受けた"], explain: "APIなどでリクエスト数の制限がある場合に返される。" },
   { doc: "network/protocol/http.md", q: "経路中のプロキシがサーバーから無効なレスポンスを受信したことを示すステータスコードはどれか。", answer: "502 Bad Gateway", wrong: ["500 Internal Server Error", "404 Not Found", "302 Found"], explain: "500 はサーバー内部のエラー。" },
   { doc: "network/protocol/http.md", q: "プロキシを経由したとき、リクエスト元の送信元IPアドレスをWebサーバーに伝えるヘッダはどれか。", answer: "X-Forwarded-For", wrong: ["X-Forwarded-Host", "X-Forwarded-Proto", "Referer"], explain: "Host は宛先ホスト、Proto はプロトコル(HTTP/HTTPS)。標準仕様としては Forwarded ヘッダもある。" },
   { doc: "network/protocol/http.md", q: "HTTPS 通信の場合にのみ Cookie を送信するよう指示する Set-Cookie の属性はどれか。", answer: "Secure", wrong: ["Expires", "Domain", "Path"], explain: "平文でセッションIDをやり取りするのは危険なため Secure 属性が必要。" },
-  { doc: "network/protocol/http.md", q: "Digest 認証の説明として正しいものはどれか。", answer: "ユーザー名+パスワード+ランダム文字列をハッシュ化して送信する", wrong: ["ユーザー名+パスワードをBase64でエンコードして送信する", "証明書を提示して認証する", "ワンタイムパスワードをSMSで送る"], explain: "Base64で送るのは Basic 認証で、盗聴されると認証情報を復元できる。" },
+  { doc: "network/protocol/http.md", q: "Digest 認証の説明として正しいものはどれか。", answer: "ユーザー名+パスワード+ランダム文字列をハッシュ化して送信する", ref: "Digest認証", wrong: ["ユーザー名+パスワードをBase64でエンコードして送信する", "証明書を提示して認証する", "ワンタイムパスワードをSMSで送る"], explain: "Base64で送るのは Basic 認証で、盗聴されると認証情報を復元できる。" },
   { doc: "network/protocol/http.md", q: "HTTP/3 が採用しているトランスポートプロトコルはどれか。", answer: "QUIC（UDPベース）", wrong: ["TCP", "SCTP", "RTP"], explain: "QUICは1ラウンドトリップで接続確立と暗号化を同時に行える。" },
   { doc: "network/protocol/http.md", q: "プロキシがクライアントに認証を要求するときに使うヘッダはどれか。", answer: "Proxy-Authenticate", wrong: ["Proxy-Authorization", "WWW-Authenticate", "Authorization"], explain: "クライアントは Proxy-Authorization で認証情報を返す。Webサーバーの場合は WWW-Authenticate / Authorization。" },
   { doc: "network/protocol/http.md", q: "恒久的に別のページへリダイレクトすることを示すステータスコードはどれか。", answer: "301 Moved Permanently", wrong: ["302 Found", "200 OK", "100 Continue"], explain: "302 は一時的なリダイレクト。" },
   { doc: "network/protocol/http.md", q: "1つのTCPコネクション上で複数のリクエスト/レスポンスをストリームとして扱い、バイナリでやり取りするHTTPのバージョンはどれか。", answer: "HTTP/2", wrong: ["HTTP/1.1", "HTTP/1.0", "HTTP/3"], explain: "HTTP/2 はヘッダ圧縮(HPACK)やサーバープッシュも備える。HTTP/3 は QUIC を使う。" },
 
   { doc: "network/protocol/tls.md", q: "TLS 1.3 で廃止された鍵交換方式はどれか。", answer: "RSA鍵交換", wrong: ["DHE", "ECDHE", "PSK"], explain: "TLS 1.3 では (EC)DHE を使い、前方秘匿性を確保する。" },
-  { doc: "network/protocol/tls.md", q: "前方秘匿性の説明として正しいものはどれか。", answer: "セッション終了後に過去の通信内容を復号することが困難である", wrong: ["通信前に相手の身元を確認できる", "改ざんを検知できる", "鍵を事前に共有しておく必要がない"], explain: "TLS 1.3 は (EC)DHE で公開鍵による暗号化なしに共通鍵を生成するため前方秘匿性がある。" },
+  { doc: "network/protocol/tls.md", q: "前方秘匿性の説明として正しいものはどれか。", answer: "セッション終了後に過去の通信内容を復号することが困難である", ref: "前方秘匿性", wrong: ["通信前に相手の身元を確認できる", "改ざんを検知できる", "鍵を事前に共有しておく必要がない"], explain: "TLS 1.3 は (EC)DHE で公開鍵による暗号化なしに共通鍵を生成するため前方秘匿性がある。" },
   { doc: "network/protocol/tls.md", q: "TLS 1.2 で共通鍵のもとになる情報（プリマスターシークレット）を送るメッセージはどれか。", answer: "Client Key Exchange", wrong: ["Client Hello", "Server Key Exchange", "Change Cipher Spec"], explain: "Change Cipher Spec はそれ以降共通鍵で暗号化することを通知するメッセージ。" },
   { doc: "network/protocol/tls.md", q: "TLS 1.3 で Client Hello / Server Hello に含まれる、共通鍵のもとになる情報はどれか。", answer: "key_share", wrong: ["Session ID", "Finished", "Certificate Request"], explain: "最初の1往復で key_share を交換し、ネゴシエーション中から暗号化できる。" },
   { doc: "network/protocol/tls.md", q: "TLS 1.3 で HTTP のやり取りが始まるのは何往復目からか。", answer: "2往復目", wrong: ["1往復目", "3往復目", "4往復目"], explain: "TLS 1.2 は3往復目から暗号化通信を開始する。" },
@@ -215,10 +215,10 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/protocol/email-header.md", q: "メールを作成したメールクライアントを示すヘッダはどれか。", answer: "X-Mailer", wrong: ["Message-ID", "Content-Type", "MIME-Version"], explain: "Message-ID はメールの一意な識別子。" },
 
   { doc: "network/protocol/mail-security.md", q: "SPF レコードを記述する DNS レコードの種類はどれか。", answer: "TXT", wrong: ["MX", "A", "PTR"], explain: "SPF・DKIM・DMARC はいずれも TXT レコードに記述する。" },
-  { doc: "network/protocol/mail-security.md", q: "SPF の「~all」の意味はどれか。", answer: "許可以外の送信元をソフトフェイルとして扱う", wrong: ["許可以外の送信元を認証失敗として扱う", "すべての送信元を許可する", "SPFの検証を行わない"], explain: "「-all」は認証失敗として扱い、通常は拒否される。" },
-  { doc: "network/protocol/mail-security.md", q: "DKIM の説明として正しいものはどれか。", answer: "送信者がデジタル署名を付け、受信側がDNSの公開鍵で検証する", wrong: ["送信を許可するメールサーバのIPアドレスをDNSに登録する", "SPFとDKIMの結果に基づく処理ポリシーを示す", "メールを暗号化して送信する"], explain: "IPアドレスを登録するのは SPF、処理ポリシーを示すのは DMARC。" },
+  { doc: "network/protocol/mail-security.md", q: "SPF の「~all」の意味はどれか。", answer: "許可以外の送信元をソフトフェイルとして扱う", ref: "~all", wrong: ["許可以外の送信元を認証失敗として扱う", "すべての送信元を許可する", "SPFの検証を行わない"], explain: "「-all」は認証失敗として扱い、通常は拒否される。" },
+  { doc: "network/protocol/mail-security.md", q: "DKIM の説明として正しいものはどれか。", answer: "送信者がデジタル署名を付け、受信側がDNSの公開鍵で検証する", ref: "デジタル署名", wrong: ["送信を許可するメールサーバのIPアドレスをDNSに登録する", "SPFとDKIMの結果に基づく処理ポリシーを示す", "メールを暗号化して送信する"], explain: "IPアドレスを登録するのは SPF、処理ポリシーを示すのは DMARC。" },
   { doc: "network/protocol/mail-security.md", q: "SPF と DKIM の結果に基づいて受信後の処理方法を指定する仕組みはどれか。", answer: "DMARC", wrong: ["SPF", "DKIM", "STARTTLS"], explain: "ポリシーは none / quarantine / reject。" },
-  { doc: "network/protocol/mail-security.md", q: "DMARC ポリシーで「p=quarantine」を指定した場合の処理はどれか。", answer: "迷惑メールフォルダに移動する", wrong: ["メールを拒否する", "何もしない", "送信者に再送を要求する"], explain: "reject は拒否、none は DMARC を適用しない。" },
+  { doc: "network/protocol/mail-security.md", q: "DMARC ポリシーで「p=quarantine」を指定した場合の処理はどれか。", answer: "迷惑メールフォルダに移動する", ref: "quarantine", wrong: ["メールを拒否する", "何もしない", "送信者に再送を要求する"], explain: "reject は拒否、none は DMARC を適用しない。" },
   { doc: "network/protocol/mail-security.md", q: "DMARC レコードでアグリゲートレポートの送信先を指定する項目はどれか。", answer: "rua", wrong: ["ruf", "fo", "p"], explain: "ruf はフォレンジックレポートの送信先。" },
 
   { doc: "network/protocol/voip.md", q: "電話機間の接続（呼び出しや切断）を行う呼制御のプロトコルはどれか。", answer: "SIP", wrong: ["RTP", "RTCP", "SDP"], explain: "SIPで呼制御（シグナリング）、RTPで音声を転送する。" },
@@ -228,6 +228,6 @@ window.QUIZ_QUESTIONS = [
   { doc: "network/protocol/voip.md", q: "SIP で接続開始をリクエストするメッセージはどれか。", answer: "INVITE", wrong: ["REGISTER", "ACK", "BYE"], explain: "REGISTER=自身の情報を登録、ACK=接続の確立を通知、BYE=接続の終了を通知。" },
   { doc: "network/protocol/voip.md", q: "4kHz のアナログ信号を忠実に再現するために必要なサンプリング周波数はどれか。", answer: "8kHz", wrong: ["4kHz", "2kHz", "44.1kHz"], explain: "標本化定理により、周期の2倍以上でサンプリングする必要がある。" },
   { doc: "network/protocol/voip.md", q: "VoIP で PCM を使った場合に消費する帯域幅はどれくらいか。", answer: "64 kbps 程度", wrong: ["8 kbps 程度", "1.5 Mbps 程度", "16 kbps 程度"], explain: "CS-ACELP は 8 kbps 程度だが、PCMより音質が劣る。" },
-  { doc: "network/protocol/voip.md", q: "ジッターの説明として正しいものはどれか。", answer: "パケットの到着時間のばらつき", wrong: ["パケットが失われる割合", "往復にかかる時間", "音声を数値に変換する工程"], explain: "RTP はジッターを最小化するよう設計されている。" },
+  { doc: "network/protocol/voip.md", q: "ジッターの説明として正しいものはどれか。", answer: "パケットの到着時間のばらつき", ref: "ジッター", wrong: ["パケットが失われる割合", "往復にかかる時間", "音声を数値に変換する工程"], explain: "RTP はジッターを最小化するよう設計されている。" },
   { doc: "network/protocol/voip.md", q: "サンプリングした値を離散的な数値に変換する工程はどれか。", answer: "量子化", wrong: ["標本化", "符号化", "圧縮"], explain: "標本化 → 量子化 → 符号化 の順で音声をデジタルデータに変換する。" },
 ];

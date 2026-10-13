@@ -135,12 +135,118 @@
     if (area) area.scrollTop = 0;
   }
 
-  function docLink(path, text) {
-    const a = el("a", "quiz-doc-link", text);
-    a.href = "#/" + path;
-    a.target = "_blank";
-    a.rel = "noopener";
-    return a;
+  // ---- 資料をその場で開くパネル ----
+  async function loadDocText(path) {
+    const m = ctx.manifest.find((mm) => mm.path === path);
+    if (m && m.body) return m.body;
+    const res = await fetch((m && m.url) || path, { cache: "no-cache" });
+    if (!res.ok) throw new Error("HTTP " + res.status);
+    const text = await res.text();
+    if (m) m.body = text;
+    return text;
+  }
+
+  function renderDocInto(box, path, md) {
+    const html = marked.parse(md);
+    box.innerHTML = window.DOMPurify ? DOMPurify.sanitize(html) : html;
+    const first = box.firstElementChild;
+    if (first && first.tagName === "H1" && /\.md$/i.test(first.textContent.trim())) first.remove();
+    box.querySelectorAll("table").forEach((t) => {
+      const wrap = el("div", "table-wrap");
+      t.replaceWith(wrap);
+      wrap.append(t);
+    });
+    // パネル内のリンクでクイズが中断されないよう，資料間リンクは別タブで開く
+    const base = path.includes("/") ? path.slice(0, path.lastIndexOf("/") + 1) : "";
+    box.querySelectorAll("a[href]").forEach((a) => {
+      const href = a.getAttribute("href");
+      if (/\.md($|[?#])/i.test(href) && !/^([a-z]+:)?\/\//i.test(href) && !href.startsWith("#")) {
+        a.setAttribute("href", "#/" + new URL(href, "https://x/" + base).pathname.replace(/^\//, ""));
+      }
+      a.target = "_blank";
+      a.rel = "noopener";
+    });
+  }
+
+  // 正解の語句（またはその一部）が書かれている最初の箇所を探して強調する。
+  // ref があれば（正解が資料の文言を言い換えている問題）それを最優先で探す
+  function highlightAnswer(box, answer, ref) {
+    const norm = (s) => s.replace(/\s+/g, "");
+    const parts = answer.split(/[\s／/・，,、（）()「」]+/).filter((s) => s.length >= 2);
+    const candidates = [...new Set([answer, ...parts])].sort((a, b) => b.length - a.length);
+    if (ref) candidates.unshift(ref);
+    // 入れ子の箇条書きや表を除いた，その行自体の文で比べる
+    const ownText = (b) => {
+      const clone = b.cloneNode(true);
+      clone.querySelectorAll("ul, ol, table, p, pre").forEach((n) => n.remove());
+      return clone.textContent;
+    };
+    const blocks = [...box.querySelectorAll("td, th, li, p, h2, h3, h4, pre")].map((b) => ({ b, t: norm(ownText(b)) }));
+    for (const cand of candidates) {
+      const found = blocks.find((x) => x.t.includes(norm(cand)));
+      const hit = found && found.b;
+      if (!hit) continue;
+      hit.classList.add("quiz-peek-hit");
+      const walker = document.createTreeWalker(hit, NodeFilter.SHOW_TEXT);
+      for (let node = walker.nextNode(); node; node = walker.nextNode()) {
+        const i = node.nodeValue.indexOf(cand);
+        if (i === -1) continue;
+        const mark = el("mark", "quiz-peek-mark");
+        const rest = node.splitText(i);
+        rest.splitText(cand.length);
+        rest.replaceWith(mark);
+        mark.append(rest);
+        break;
+      }
+      return hit;
+    }
+    return null;
+  }
+
+  function docPeek(q) {
+    const wrap = el("div", "quiz-peek");
+    const toggle = el("button", "quiz-peek-toggle", "資料で確認する");
+    toggle.type = "button";
+    toggle.setAttribute("aria-expanded", "false");
+    const panel = el("div", "quiz-peek-panel");
+    panel.hidden = true;
+    let loaded = false;
+
+    toggle.addEventListener("click", async () => {
+      const open = panel.hidden;
+      panel.hidden = !open;
+      toggle.setAttribute("aria-expanded", String(open));
+      toggle.classList.toggle("is-open", open);
+      if (!open || loaded) {
+        if (open) revealInContentArea(panel);
+        return;
+      }
+      loaded = true;
+      const head = el("div", "quiz-peek-head");
+      head.append(el("span", "quiz-peek-title", dirLabel(dirOf(q.doc)) + " / " + docTitle(q.doc)));
+      const full = el("a", "quiz-peek-open", "資料ページを開く ↗");
+      full.href = "#/" + q.doc;
+      full.target = "_blank";
+      full.rel = "noopener";
+      head.append(full);
+      const body = el("div", "quiz-peek-body", "読み込み中…");
+      panel.append(head, body);
+      try {
+        renderDocInto(body, q.doc, await loadDocText(q.doc));
+        const hit = highlightAnswer(body, q.answer, q.ref);
+        if (hit) {
+          body.scrollTop = Math.max(0, hit.getBoundingClientRect().top - body.getBoundingClientRect().top - 40);
+        } else {
+          body.prepend(el("p", "quiz-peek-note", "正解の語句が書かれた箇所を自動で特定できなかったため，資料の先頭を表示しています。"));
+        }
+      } catch (err) {
+        body.textContent = "資料を読み込めませんでした: " + String(err.message || err);
+      }
+      revealInContentArea(panel);
+    });
+
+    wrap.append(toggle, panel);
+    return wrap;
   }
 
   function button(text, className, onClick) {
@@ -379,7 +485,7 @@
     feedback.append(el("div", "quiz-verdict", item.correct ? "正解！" : "不正解"));
     if (!item.correct) feedback.append(el("p", "quiz-answer-line", "正解: " + item.q.answer));
     if (item.q.explain) feedback.append(el("p", "quiz-explain", item.q.explain));
-    feedback.append(docLink(item.q.doc, "資料で確認する →"));
+    feedback.append(docPeek(item.q));
     feedback.hidden = false;
 
     const running = c.querySelector(".quiz-running-score");
@@ -454,7 +560,7 @@
         box.append(el("p", "quiz-review-yours", "あなたの解答: " + it.choices[it.picked]));
         box.append(el("p", "quiz-review-answer", "正解: " + it.q.answer));
         if (it.q.explain) box.append(el("p", "quiz-explain", it.q.explain));
-        box.append(docLink(it.q.doc, "資料で確認する →"));
+        box.append(docPeek(it.q));
         c.append(box);
       });
     }

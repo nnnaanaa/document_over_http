@@ -539,6 +539,51 @@
     });
   }
 
+  // ---- 印刷 ----
+  // パンくずの行に印刷ボタンを置き，末尾に印刷時だけ出る出典（ページのURLと印刷日）を付ける
+  function addPrintTools() {
+    const line = document.createElement("div");
+    line.className = "doc-topline";
+    const crumb = contentEl.querySelector(".doc-breadcrumb");
+    if (crumb) {
+      crumb.before(line);
+      line.appendChild(crumb);
+    } else {
+      contentEl.prepend(line);
+      line.appendChild(document.createElement("span"));
+    }
+    const btn = document.createElement("button");
+    btn.type = "button";
+    btn.className = "doc-print-btn";
+    btn.title = "この資料を印刷（PDFとして保存もできます）";
+    btn.innerHTML =
+      '<svg class="icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg><span>印刷</span>';
+    btn.addEventListener("click", () => window.print());
+    line.appendChild(btn);
+
+    const source = document.createElement("p");
+    source.className = "print-only print-source";
+    const d = new Date();
+    source.textContent =
+      "出典: " + location.href + "（" + d.getFullYear() + "/" + (d.getMonth() + 1) + "/" + d.getDate() + " 印刷）";
+    contentEl.appendChild(source);
+  }
+
+  // ダークテーマのまま印刷すると黒地になるため，印刷中だけライトテーマにする（設定は保存しない）
+  let themeBeforePrint = null;
+  window.addEventListener("beforeprint", () => {
+    if (document.documentElement.getAttribute("data-theme") !== "dark") return;
+    themeBeforePrint = "dark";
+    document.documentElement.setAttribute("data-theme", "light");
+    hljsTheme.href = HLJS_LIGHT;
+  });
+  window.addEventListener("afterprint", () => {
+    if (!themeBeforePrint) return;
+    document.documentElement.setAttribute("data-theme", themeBeforePrint);
+    hljsTheme.href = HLJS_DARK;
+    themeBeforePrint = null;
+  });
+
   function currentHashPrefix() {
     return "/" + currentPath();
   }
@@ -665,6 +710,7 @@
       contentEl.innerHTML = safeHtml;
       decorateDocument(meta);
       appendQuizCta(path);
+      addPrintTools();
       if (meta && meta.dir) storageSet(LAST_DOC_KEY, path);
 
       contentEl.querySelectorAll("pre code").forEach((block) => {

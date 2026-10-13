@@ -60,9 +60,11 @@
 
     const actions = el("div", "home-actions");
     const last = lastPath && manifest.find((m) => m.path === lastPath);
+    const saved = quiz && quiz.saved ? quiz.saved() : null;
     if (last) actions.append(actionCard("#/" + last.path, "前回の続きを読む", last.title, true));
-    if (all.weak) actions.append(actionCard("#/quiz/@weak", "要復習の問題を解く", all.weak + " 問（前回まちがえた問題）", !last));
-    actions.append(actionCard("#/quiz/@random", "ランダムに10問", "全範囲からの腕試し", !last && !all.weak));
+    if (saved) actions.append(actionCard("#/quiz/@resume", "四択問題の続きから", saved.answered + " / " + saved.total + " 問 解答済み", !last));
+    if (all.weak) actions.append(actionCard("#/quiz/@weak", "要復習の問題を解く", all.weak + " 問（まちがえた・自信なしの問題）", !last && !saved));
+    actions.append(actionCard("#/quiz/@random", "ランダムに10問", "全範囲からの腕試し", !last && !saved && !all.weak));
     actions.append(actionCard("#/keywords", "キーワードをながめる", "重要語を自動で切り替え表示"));
     const tangoCount = window.DocKeywords ? window.DocKeywords.count("tango") : 0;
     if (tangoCount) {

@@ -20,6 +20,8 @@
   --ok-bg: #e8f6ee;
   --ng: #c2362f;
   --ng-bg: #fdecea;
+  --warn: #a8650a;
+  --warn-bg: #fff4e0;
   --radius: 10px;
 }
 
@@ -45,6 +47,8 @@
   --ok-bg: #16281f;
   --ng: #ff8a80;
   --ng-bg: #2e1a1a;
+  --warn: #f0b55a;
+  --warn-bg: #2d2414;
 }
 
 * { box-sizing: border-box; }
@@ -836,6 +840,112 @@ a:hover { color: var(--accent-hover); }
 .markdown-body .quiz-review-yours { color: var(--ng); margin: 0 0 0.2rem; font-size: 0.92rem; }
 .markdown-body .quiz-explain { margin: 0 0 0.5rem; font-size: 0.93rem; }
 .quiz-doc-link { font-size: 0.86rem; font-weight: 600; }
+
+/* 自信なし */
+.quiz-unsure {
+  display: inline-flex;
+  align-items: center;
+  margin-top: 0.85rem;
+  padding: 0.4rem 0.85rem;
+  border: 1.5px dashed var(--border-strong);
+  border-radius: 999px;
+  background: none;
+  color: var(--text-muted);
+  font: inherit;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.quiz-unsure:hover { border-color: var(--warn); color: var(--warn); }
+.quiz-unsure:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.quiz-unsure.is-on { border-style: solid; border-color: var(--warn); background: var(--warn-bg); color: var(--warn); }
+.quiz-feedback.is-unsure { border-left-color: var(--warn); background: var(--warn-bg); }
+.quiz-feedback.is-unsure .quiz-verdict { color: var(--warn); }
+
+/* ほかの選択肢の説明 */
+.quiz-others {
+  margin: 0.2rem 0 0.5rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: 8px;
+  background: var(--bg-elevated);
+  border: 1px solid var(--border);
+  font-size: 0.86rem;
+}
+.quiz-others-title { font-size: 0.74rem; font-weight: 700; color: var(--text-muted); margin-bottom: 0.2rem; }
+.markdown-body .quiz-others-list { list-style: none; margin: 0; padding: 0; }
+.markdown-body .quiz-others-list li { margin: 0.15rem 0; line-height: 1.6; }
+.quiz-others-choice { font-weight: 700; color: var(--text-strong); }
+.quiz-others-list li.is-picked .quiz-others-choice { color: var(--ng); }
+.quiz-others-arrow { margin: 0 0.4rem; color: var(--text-muted); }
+.quiz-others-desc { color: var(--text); }
+
+/* 前回の続き */
+.quiz-resume {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem 1rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+  padding: 0.9rem 1.1rem;
+  border: 1.5px solid var(--accent);
+  border-radius: var(--radius);
+  background: var(--accent-soft);
+}
+.quiz-resume-text { display: flex; flex-direction: column; gap: 0.1rem; }
+.quiz-resume-title { font-weight: 800; color: var(--text-strong); }
+.quiz-resume-sub { font-size: 0.85rem; color: var(--text-muted); }
+.quiz-resume-actions { display: flex; align-items: center; gap: 0.75rem; }
+
+.quiz-check {
+  flex-basis: 100%;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+  color: var(--text);
+  cursor: pointer;
+}
+.quiz-check input { margin-top: 0.3rem; accent-color: var(--accent); }
+
+/* 結果のカテゴリ別正答率 */
+.markdown-body .quiz-breakdown-list { list-style: none; margin: 0 0 1.5rem; padding: 0; display: grid; gap: 0.5rem; }
+.markdown-body .quiz-breakdown-row {
+  display: grid;
+  grid-template-columns: minmax(8rem, 13rem) 1fr 10.5rem 7.5rem;
+  align-items: center;
+  gap: 0.75rem;
+  margin: 0;
+  padding: 0.55rem 0.8rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-elevated);
+}
+.quiz-breakdown-name { font-weight: 700; color: var(--text-strong); font-size: 0.9rem; }
+.quiz-breakdown-bar { height: 8px; border-radius: 999px; background: var(--border); overflow: hidden; }
+.quiz-breakdown-fill { display: block; height: 100%; border-radius: 999px; background: var(--accent); }
+.quiz-breakdown-row.is-low .quiz-breakdown-fill { background: var(--ng); }
+.quiz-breakdown-row.is-full .quiz-breakdown-fill { background: var(--ok); }
+.quiz-breakdown-row > .quiz-small { justify-self: end; }
+.quiz-breakdown-num { font-size: 0.84rem; color: var(--text-muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.quiz-breakdown-row.is-low .quiz-breakdown-num { color: var(--ng); font-weight: 700; }
+@media (max-width: 640px) {
+  .markdown-body .quiz-breakdown-row { grid-template-columns: 1fr auto; gap: 0.4rem 0.75rem; }
+  .quiz-breakdown-bar { grid-column: 1 / -1; grid-row: 2; }
+  .quiz-breakdown-num { grid-column: 1; grid-row: 3; white-space: normal; }
+  .quiz-breakdown-row > .quiz-small, .quiz-breakdown-spacer { grid-column: 2; grid-row: 1; }
+}
+
+.quiz-review-tag {
+  display: inline-block;
+  margin-right: 0.5rem;
+  padding: 0.05rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.quiz-review-tag.is-wrong { background: var(--ng-bg); color: var(--ng); }
+.quiz-review-tag.is-unsure { background: var(--warn-bg); color: var(--warn); }
 
 /* 資料をその場で開くパネル */
 .quiz-peek { margin-top: 0.4rem; }

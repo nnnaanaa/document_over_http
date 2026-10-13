@@ -3,6 +3,7 @@
 
   const STATS_KEY = "doc-quiz-stats";
   const PREFS_KEY = "doc-quiz-prefs";
+  const SESSION_KEY = "doc-quiz-session";
 
   // 問題文から安定したIDを作る（問題の並び順を変えても成績が引き継がれるように）
   function hashId(s) {
@@ -120,14 +121,145 @@
     return { total: qs.length, answered, mastered, weak };
   }
 
-  function record(q, correct) {
+  // 「自信なし」で正解した問題は要復習（last: false）に残し，u で区別する
+  function record(q, correct, unsure) {
     const s = stats[q.id] || { c: 0, w: 0 };
     if (correct) s.c++;
     else s.w++;
-    s.last = correct;
     s.t = Date.now();
     stats[q.id] = s;
+    applyUnsure(q, correct, unsure);
+  }
+  function applyUnsure(q, correct, unsure) {
+    const s = stats[q.id];
+    if (!s) return;
+    s.last = correct && !unsure;
+    if (correct && unsure) s.u = true;
+    else delete s.u;
     saveJson(STATS_KEY, stats);
+  }
+
+  // ---- 苦手な問題を優先して選ぶ ----
+  // 前回まちがえた・自信なし > 未回答 > しばらく解いていない・過去にまちがえたことがある，の順に出やすくする
+  function weightOf(q) {
+    const s = stats[q.id];
+    if (!s) return 3;
+    if (s.last === false) return 6 + Math.min(s.w, 4);
+    const days = (Date.now() - (s.t || 0)) / 86400000;
+    return 1 + Math.min(s.w, 3) * 0.7 + Math.min(days / 7, 2);
+  }
+  // 重み付きの非復元抽出（各問題に random^(1/重み) のキーを振って大きい順に取る）
+  function pickWeighted(qs, n) {
+    return qs
+      .map((q) => ({ q, k: Math.pow(Math.random(), 1 / weightOf(q)) }))
+      .sort((a, b) => b.k - a.k)
+      .slice(0, n)
+      .map((x) => x.q);
+  }
+
+  // ---- 不正解の選択肢の説明（キーワード・過去問の単語帳から引く） ----
+  const normTerm = (s) => String(s).normalize("NFKC").replace(/\s+/g, "").toLowerCase();
+  const stripParen = (s) => s.replace(/[（(][^）)]*[）)]/g, "");
+  let glossary = null;
+  function buildGlossary() {
+    const map = new Map();
+    const add = (key, entry) => {
+      const k = normTerm(key);
+      if (k.length >= 2 && !map.has(k)) map.set(k, entry);
+    };
+    const kws = Array.isArray(window.KEYWORDS) ? window.KEYWORDS : [];
+    const tango = Array.isArray(window.TANGO) ? window.TANGO : [];
+    [...kws, ...tango].forEach((e) => {
+      if (!e || !e.term || !e.desc) return;
+      add(e.term, e);
+      add(stripParen(e.term), e);
+    });
+    return map;
+  }
+  // 英数字の途中で一致したもの（"15" と "150" など）は除く
+  function hasToken(hay, needle) {
+    const isWord = (ch) => !!ch && /[0-9a-z.]/.test(ch);
+    for (let i = hay.indexOf(needle); i !== -1; i = hay.indexOf(needle, i + 1)) {
+      if (!isWord(hay[i - 1]) && !isWord(hay[i + needle.length])) return true;
+    }
+    return false;
+  }
+  function describeChoice(choice, q) {
+    if (!glossary) glossary = buildGlossary();
+    for (const key of [choice, stripParen(choice), "IEEE " + choice]) {
+      const e = glossary.get(normTerm(key));
+      if (e) return { term: e.term, desc: e.desc };
+    }
+    const n = normTerm(choice);
+    if (n.length < 2) return null;
+    const kws = (Array.isArray(window.KEYWORDS) ? window.KEYWORDS : []).filter((k) => k.doc === q.doc);
+    // 「A / B / C」と「説明a / 説明b / 説明c」が対応している語は，該当する部分だけを取り出す
+    for (const k of kws) {
+      const terms = k.term.split(" / ");
+      const descs = k.desc.split(" / ");
+      if (terms.length < 2 || terms.length !== descs.length) continue;
+      const i = terms.findIndex((t) => normTerm(t) === n || normTerm(stripParen(t)) === n);
+      if (i !== -1) return { term: terms[i].trim(), desc: descs[i].trim() };
+    }
+    // 同じ資料のキーワードの用語・説明に出てくる値（"60W" など）は，その語の説明を示す
+    const hit = kws.find((k) => hasToken(normTerm(k.term), n)) || kws.find((k) => hasToken(normTerm(k.desc), n));
+    return hit ? { term: hit.term, desc: hit.desc } : null;
+  }
+  function choiceNote(choice, q) {
+    const d = describeChoice(choice, q);
+    if (!d) return null;
+    return normTerm(d.term) === normTerm(choice) || normTerm(stripParen(d.term)) === normTerm(choice)
+      ? d.desc
+      : d.term + "：" + d.desc;
+  }
+
+  // ---- 途中から再開 ----
+  function newItem(q) {
+    return { q, choices: shuffle([q.answer, ...shuffle(q.wrong).slice(0, 3)]), picked: null, correct: false, unsure: false };
+  }
+  function saveSession() {
+    if (!session) return;
+    saveJson(SESSION_KEY, {
+      scope: session.scope,
+      limit: session.limit,
+      t: Date.now(),
+      items: session.items.map((it) => ({
+        id: it.q.id,
+        choices: it.choices,
+        picked: it.picked,
+        correct: it.correct,
+        unsure: !!it.unsure,
+      })),
+    });
+  }
+  function clearSavedSession() {
+    try {
+      localStorage.removeItem(SESSION_KEY);
+    } catch {
+      /* noop */
+    }
+  }
+  function loadSavedSession() {
+    const raw = loadJson(SESSION_KEY);
+    if (!raw || !raw.scope || !Array.isArray(raw.items)) return null;
+    const byId = new Map(bank.map((q) => [q.id, q]));
+    const items = raw.items
+      .map((it) => {
+        const q = it && byId.get(it.id);
+        if (!q) return null;
+        // 保存後に問題が書き換えられていたら，選択肢を作り直して未回答に戻す
+        const ok =
+          Array.isArray(it.choices) &&
+          it.choices.includes(q.answer) &&
+          it.choices.every((ch) => ch === q.answer || q.wrong.includes(ch));
+        if (!ok) return newItem(q);
+        const picked = Number.isInteger(it.picked) && it.picked < it.choices.length ? it.picked : null;
+        return { q, choices: it.choices, picked, correct: picked !== null && !!it.correct, unsure: !!it.unsure };
+      })
+      .filter(Boolean);
+    const index = items.findIndex((it) => it.picked === null);
+    if (index === -1) return null;
+    return { scope: raw.scope, limit: raw.limit || 0, index, items };
   }
 
   function scrollToTop() {
@@ -290,6 +422,27 @@
     });
     c.append(statsEl);
 
+    const saved = loadSavedSession();
+    if (saved) {
+      const answered = saved.items.filter((it) => it.picked !== null).length;
+      const banner = el("div", "quiz-resume");
+      const text = el("div", "quiz-resume-text");
+      text.append(
+        el("span", "quiz-resume-title", "前回の続きがあります"),
+        el("span", "quiz-resume-sub", scopeLabel(saved.scope) + "・" + answered + " / " + saved.items.length + " 問 解答済み")
+      );
+      const btns = el("div", "quiz-resume-actions");
+      btns.append(
+        button("続きから解く", "quiz-primary", () => resumeSession(saved)),
+        button("破棄", "quiz-link-button", () => {
+          clearSavedSession();
+          banner.remove();
+        })
+      );
+      banner.append(text, btns);
+      c.append(banner);
+    }
+
     const prefs = loadJson(PREFS_KEY);
     const form = el("form", "quiz-setup");
 
@@ -341,10 +494,18 @@
     const start = el("button", "quiz-primary", "スタート");
     start.type = "submit";
     form.append(start);
+
+    const prio = el("label", "quiz-check");
+    const prioInput = el("input");
+    prioInput.type = "checkbox";
+    prioInput.checked = prefs.prioritize !== false;
+    prio.append(prioInput, el("span", null, "苦手な問題を優先して出す（まちがえた・自信なし・未回答・しばらく解いていない問題が出やすくなります）"));
+    form.append(prio);
+
     form.addEventListener("submit", (e) => {
       e.preventDefault();
       const count = Number(form.querySelector('input[name="quiz-count"]:checked').value);
-      saveJson(PREFS_KEY, { scope: select.value, count });
+      saveJson(PREFS_KEY, { scope: select.value, count, prioritize: prioInput.checked });
       startSession(decodeScope(select.value), count);
     });
     c.append(form);
@@ -398,20 +559,18 @@
 
   // ---- 出題 ----
   function startSession(scope, limit, fixedQuestions) {
-    let qs = fixedQuestions || shuffle(questionsIn(scope));
-    if (!fixedQuestions && limit > 0) qs = qs.slice(0, limit);
+    let qs = fixedQuestions || questionsIn(scope);
+    if (!fixedQuestions && limit > 0 && qs.length > limit) {
+      qs = loadJson(PREFS_KEY).prioritize !== false ? pickWeighted(qs, limit) : shuffle(qs).slice(0, limit);
+    }
     if (!qs.length) return;
-    session = {
-      scope,
-      limit,
-      index: 0,
-      items: shuffle(qs).map((q) => ({
-        q,
-        choices: shuffle([q.answer, ...shuffle(q.wrong).slice(0, 3)]),
-        picked: null,
-        correct: false,
-      })),
-    };
+    session = { scope, limit, index: 0, items: shuffle(qs).map(newItem) };
+    saveSession();
+    renderQuestion();
+  }
+
+  function resumeSession(saved) {
+    session = saved;
     renderQuestion();
   }
 
@@ -459,6 +618,12 @@
     });
     card.append(list);
 
+    // 正解しても自信がなければ要復習に残す（解答の前後どちらでも切り替えられる）
+    const unsure = button("", "quiz-unsure", () => toggleUnsure());
+    unsure.title = "自信なし（U）";
+    card.append(unsure);
+    updateUnsureButton(unsure, item);
+
     const feedback = el("div", "quiz-feedback");
     feedback.hidden = true;
     card.append(feedback);
@@ -470,8 +635,38 @@
     actions.append(button("中断して設定に戻る", "quiz-link-button", renderSetup), next);
     c.append(actions);
 
-    c.append(el("p", "quiz-hint", "キーボード: 1〜4 で解答 / Shift + 1〜4 で選択肢を消す / Enter で次へ"));
+    c.append(el("p", "quiz-hint", "キーボード: 1〜4 で解答 / Shift + 1〜4 で選択肢を消す / U で自信なし / Enter で次へ"));
     scrollToTop();
+  }
+
+  function updateUnsureButton(b, item) {
+    const on = !!item.unsure;
+    b.classList.toggle("is-on", on);
+    b.setAttribute("aria-pressed", String(on));
+    b.textContent = on ? "自信なし（正解しても要復習に残します）" : "自信なし";
+    // 不正解なら要復習に入るので切り替える意味がない
+    b.hidden = item.picked !== null && !item.correct;
+  }
+
+  function toggleUnsure() {
+    const item = session.items[session.index];
+    if (item.picked !== null && !item.correct) return;
+    item.unsure = !item.unsure;
+    if (item.picked !== null) {
+      applyUnsure(item.q, item.correct, item.unsure);
+      const verdict = ctx.container.querySelector(".quiz-verdict");
+      if (verdict) verdict.textContent = verdictText(item);
+      const fb = ctx.container.querySelector(".quiz-feedback");
+      if (fb) fb.classList.toggle("is-unsure", item.unsure);
+    }
+    const b = ctx.container.querySelector(".quiz-unsure");
+    if (b) updateUnsureButton(b, item);
+    saveSession();
+  }
+
+  function verdictText(item) {
+    if (!item.correct) return "不正解";
+    return item.unsure ? "正解（自信なし → 要復習に残します）" : "正解！";
   }
 
   function toggleStrike(i) {
@@ -494,7 +689,8 @@
     if (row && row.classList.contains("is-struck")) return;
     item.picked = index;
     item.correct = item.choices[index] === item.q.answer;
-    record(item.q, item.correct);
+    record(item.q, item.correct, item.unsure);
+    saveSession();
 
     const c = ctx.container;
     c.querySelectorAll(".quiz-choice").forEach((b, i) => {
@@ -507,12 +703,15 @@
     c.querySelectorAll(".quiz-strike").forEach((s) => (s.disabled = true));
 
     const feedback = c.querySelector(".quiz-feedback");
-    feedback.className = "quiz-feedback " + (item.correct ? "is-correct" : "is-wrong");
-    feedback.append(el("div", "quiz-verdict", item.correct ? "正解！" : "不正解"));
+    feedback.className = "quiz-feedback " + (item.correct ? "is-correct" : "is-wrong") + (item.correct && item.unsure ? " is-unsure" : "");
+    feedback.append(el("div", "quiz-verdict", verdictText(item)));
     if (!item.correct) feedback.append(el("p", "quiz-answer-line", "正解: " + item.q.answer));
     if (item.q.explain) feedback.append(el("p", "quiz-explain", item.q.explain));
+    const others = otherChoicesNote(item);
+    if (others) feedback.append(others);
     feedback.append(docPeek(item.q));
     feedback.hidden = false;
+    updateUnsureButton(c.querySelector(".quiz-unsure"), item);
 
     const running = c.querySelector(".quiz-running-score");
     if (running) running.textContent = "正解 " + session.items.filter((it) => it.picked !== null && it.correct).length;
@@ -521,6 +720,24 @@
     next.hidden = false;
     next.focus({ preventScroll: true });
     revealInContentArea(next);
+  }
+
+  // 正解以外の選択肢が何を指すのかを，キーワード・単語帳の説明から添える
+  function otherChoicesNote(item) {
+    const rows = item.choices
+      .map((ch, i) => ({ ch, i, note: ch === item.q.answer ? null : choiceNote(ch, item.q) }))
+      .filter((r) => r.note);
+    if (!rows.length) return null;
+    const box = el("div", "quiz-others");
+    box.append(el("div", "quiz-others-title", "ほかの選択肢"));
+    const ul = el("ul", "quiz-others-list");
+    rows.forEach((r) => {
+      const li = el("li", r.i === item.picked ? "is-picked" : null);
+      li.append(el("span", "quiz-others-choice", r.ch), el("span", "quiz-others-arrow", "→"), el("span", "quiz-others-desc", r.note));
+      ul.append(li);
+    });
+    box.append(ul);
+    return box;
   }
 
   // 解説と「次へ」ボタンが画面外なら見える位置まで本文エリアだけをスクロールする
@@ -535,6 +752,7 @@
   function goNext() {
     if (session.index < session.items.length - 1) {
       session.index++;
+      saveSession();
       renderQuestion();
     } else {
       renderResult();
@@ -543,11 +761,13 @@
 
   // ---- 結果 ----
   function renderResult() {
+    clearSavedSession();
     const c = ctx.container;
     const total = session.items.length;
     const correct = session.items.filter((it) => it.correct).length;
+    const unsureCount = session.items.filter((it) => it.correct && it.unsure).length;
     const rate = Math.round((correct / total) * 100);
-    const wrongItems = session.items.filter((it) => !it.correct);
+    const reviewItems = session.items.filter((it) => !it.correct || it.unsure);
     c.innerHTML = "";
 
     c.append(el("div", "doc-breadcrumb", "確認問題 / " + scopeLabel(session.scope)));
@@ -557,33 +777,45 @@
     const big = el("div", "quiz-result-score");
     big.append(el("span", "quiz-result-num", String(correct)), el("span", "quiz-result-total", " / " + total + " 問正解"));
     score.append(big);
-    score.append(el("div", "quiz-result-rate", rate + "%"));
+    score.append(el("div", "quiz-result-rate", rate + "%" + (unsureCount ? "（うち自信なし " + unsureCount + " 問）" : "")));
     const message =
       rate === 100 ? "全問正解です。この範囲はしっかり身についています。" : rate >= 80 ? "よくできています。間違えた問題だけ復習しましょう。" : rate >= 50 ? "あと一歩です。解説と資料を見直してから解き直しましょう。" : "まずは資料を読み直してから、もう一度挑戦しましょう。";
     score.append(el("p", "quiz-result-message", message));
     c.append(score);
 
     const actions = el("div", "quiz-actions quiz-result-actions");
-    if (wrongItems.length) {
+    const lastScope = session.scope;
+    const lastLimit = session.limit;
+    if (reviewItems.length) {
+      const label = unsureCount ? "間違えた・自信なしの " : "間違えた ";
       actions.append(
-        button("間違えた " + wrongItems.length + " 問を解き直す", "quiz-primary", () =>
-          startSession(session.scope, 0, wrongItems.map((it) => it.q))
+        button(label + reviewItems.length + " 問を解き直す", "quiz-primary", () =>
+          startSession(lastScope, 0, reviewItems.map((it) => it.q))
         )
       );
     }
-    const lastScope = session.scope;
-    const lastLimit = session.limit;
     actions.append(button("同じ範囲でもう一度", "quiz-secondary", () => startSession(lastScope, lastLimit)));
     actions.append(button("出題設定に戻る", "quiz-link-button", renderSetup));
     c.append(actions);
 
-    if (wrongItems.length) {
-      c.append(el("h2", null, "間違えた問題"));
-      wrongItems.forEach((it) => {
+    c.append(renderBreakdown(session.items));
+
+    if (reviewItems.length) {
+      c.append(el("h2", null, "見直す問題"));
+      reviewItems.forEach((it) => {
         const box = el("div", "quiz-review");
-        box.append(el("div", "quiz-source", dirLabel(dirOf(it.q.doc)) + " / " + docTitle(it.q.doc)));
+        const src = el("div", "quiz-source");
+        src.append(
+          el("span", "quiz-review-tag " + (it.correct ? "is-unsure" : "is-wrong"), it.correct ? "自信なし" : "不正解"),
+          document.createTextNode(dirLabel(dirOf(it.q.doc)) + " / " + docTitle(it.q.doc))
+        );
+        box.append(src);
         box.append(el("p", "quiz-question", it.q.q));
-        box.append(el("p", "quiz-review-yours", "あなたの解答: " + it.choices[it.picked]));
+        if (!it.correct) {
+          const yours = it.choices[it.picked];
+          const note = choiceNote(yours, it.q);
+          box.append(el("p", "quiz-review-yours", "あなたの解答: " + yours + (note ? "（" + note + "）" : "")));
+        }
         box.append(el("p", "quiz-review-answer", "正解: " + it.q.answer));
         if (it.q.explain) box.append(el("p", "quiz-explain", it.q.explain));
         box.append(docPeek(it.q));
@@ -593,13 +825,58 @@
     scrollToTop();
   }
 
+  // カテゴリ別（1カテゴリだけなら資料別）の正答率。低い順に並べて苦手な分野をすぐ分かるようにする
+  function renderBreakdown(items) {
+    const byDir = new Set(items.map((it) => dirOf(it.q.doc))).size > 1;
+    const groups = new Map();
+    items.forEach((it) => {
+      const key = byDir ? dirOf(it.q.doc) : it.q.doc;
+      const g = groups.get(key) || { key, total: 0, correct: 0, unsure: 0 };
+      g.total++;
+      if (it.correct) g.correct++;
+      if (it.correct && it.unsure) g.unsure++;
+      groups.set(key, g);
+    });
+    const order = byDir ? orderedDirs() : orderedDocs();
+    const rows = [...groups.values()].sort(
+      (a, b) => a.correct / a.total - b.correct / b.total || order.indexOf(a.key) - order.indexOf(b.key)
+    );
+
+    const wrap = el("section", "quiz-breakdown");
+    wrap.append(el("h2", null, byDir ? "カテゴリ別の正答率" : "資料別の正答率"));
+    const list = el("ul", "quiz-breakdown-list");
+    rows.forEach((g) => {
+      const pct = Math.round((g.correct / g.total) * 100);
+      const li = el("li", "quiz-breakdown-row" + (pct < 60 ? " is-low" : pct === 100 ? " is-full" : ""));
+      const name = el("span", "quiz-breakdown-name", byDir ? leafLabel(g.key) : docTitle(g.key));
+      const bar = el("span", "quiz-breakdown-bar");
+      const fill = el("span", "quiz-breakdown-fill");
+      fill.style.width = pct + "%";
+      bar.append(fill);
+      const num = el("span", "quiz-breakdown-num", g.correct + " / " + g.total + "（" + pct + "%）" + (g.unsure ? "・自信なし " + g.unsure : ""));
+      li.append(name, bar, num);
+      if (pct < 100) {
+        const scope = byDir ? { type: "folder", value: g.key } : { type: "doc", value: g.key };
+        li.append(button("この範囲を解く", "quiz-small", () => startSession(scope, byDir ? 10 : 0)));
+      } else {
+        li.append(el("span", "quiz-breakdown-spacer"));
+      }
+      list.append(li);
+    });
+    wrap.append(list);
+    return wrap;
+  }
+
   document.addEventListener("keydown", (e) => {
     if (!session || !ctx || !ctx.container.querySelector(".quiz-choices")) return;
     if (e.target.closest && e.target.closest("input, select, textarea")) return;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const item = session.items[session.index];
     const digit = /^Digit[1-4]$/.test(e.code) ? Number(e.code.slice(5)) : 0;
-    if (item.picked === null && e.shiftKey && digit) {
+    if (e.code === "KeyU" && !e.shiftKey) {
+      e.preventDefault();
+      toggleUnsure();
+    } else if (item.picked === null && e.shiftKey && digit) {
       e.preventDefault();
       if (digit <= item.choices.length) toggleStrike(digit - 1);
     } else if (item.picked === null && /^[1-4]$/.test(e.key)) {
@@ -628,9 +905,20 @@
     summary(filter) {
       return summarize(filter ? bank.filter((q) => filter(q.doc)) : bank);
     },
-    // route: "" なら出題設定、資料パスや @weak / @random / @folder:<dir> なら該当範囲をすぐに出題する
+    // 中断中の出題があれば，その進み具合（ホーム画面の「続きから」用）
+    saved() {
+      const s = loadSavedSession();
+      return s ? { answered: s.items.filter((it) => it.picked !== null).length, total: s.items.length } : null;
+    },
+    // route: "" なら出題設定、資料パスや @weak / @random / @folder:<dir> なら該当範囲をすぐに出題する。@resume は中断した出題の続き
     render(container, options) {
       ctx = { container, manifest: options.manifest, folderLabel: options.folderLabel };
+      if (options.route === "@resume") {
+        const saved = loadSavedSession();
+        if (saved) resumeSession(saved);
+        else renderSetup();
+        return;
+      }
       const target = options.route ? scopeFromRoute(options.route) : null;
       if (target && questionsIn(target.scope).length) {
         startSession(target.scope, target.limit);

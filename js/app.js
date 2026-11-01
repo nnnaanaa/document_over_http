@@ -558,7 +558,10 @@
     btn.title = "この資料を印刷（PDFとして保存もできます）";
     btn.innerHTML =
       '<svg class="icon" viewBox="0 0 24 24" width="15" height="15" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M6 9V3h12v6"/><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><rect x="6" y="14" width="12" height="7" rx="1"/></svg><span>印刷</span>';
-    btn.addEventListener("click", () => window.print());
+    btn.addEventListener("click", () => {
+      preparePrintLayout();
+      window.print();
+    });
     line.appendChild(btn);
 
     const source = document.createElement("p");
@@ -569,15 +572,112 @@
     contentEl.appendChild(source);
   }
 
+  // ---- 印刷時の改ページ調整（A4で泣き別れを減らす） ----
+  // 見出しごとにまとまりを包み，A4の1ページに収まる大きさのまとまり・表・コードには「途中で改ページしない」を付ける。
+  // 1ページに収まらないものにまで付けると，丸ごと次のページへ送られて大きな空白ができるため，高さを測ってから決める。
+  // 測るときは印刷と同じ幅・文字サイズ（html.print-measure）を一瞬だけ当てる
+  const MM = 96 / 25.4;
+  const PRINT_PAGE_H = (297 - 14 * 2) * MM; // A4 の高さから上下の余白（@page の 14mm）を引いたもの
+  const KEEP_SECTION = 0.25; // 見出しのまとまり: 1ページの1/4以下の小さいものだけ分けない（大きいものまで送ると空白が増える）
+  const KEEP_BLOCK = 0.5; // 表・コード・リスト・見出し＋直後のかたまり: 半ページ以下なら分けない（それより大きい表は行単位で分け，見出し行を繰り返す）
+  let printPrepared = false;
+
+  function wrapSections(parent, tag, stops) {
+    [...parent.children]
+      .filter((c) => c.tagName === tag)
+      .forEach((h) => {
+        const wrap = document.createElement("div");
+        wrap.className = "print-sec";
+        h.before(wrap);
+        let n = h;
+        while (n && (n === h || !stops.includes(n.tagName)) && !n.classList.contains("print-source") && !n.classList.contains("quiz-cta")) {
+          const next = n.nextElementSibling;
+          wrap.appendChild(n);
+          n = next;
+        }
+      });
+  }
+
+  function preparePrintLayout() {
+    if (printPrepared || !contentEl.querySelector(".doc-topline")) return;
+    printPrepared = true;
+
+    wrapSections(contentEl, "H2", ["H1", "H2"]);
+    contentEl.querySelectorAll(".print-sec").forEach((sec) => wrapSections(sec, "H3", ["H1", "H2", "H3"]));
+    // 見出しと直後のかたまりはくっつける（見出しだけがページの最後に残らないように）
+    contentEl.querySelectorAll("h2, h3, h4").forEach((h) => {
+      const next = h.nextElementSibling;
+      if (!next || /^H[1-6]$/.test(next.tagName) || next.classList.contains("print-sec")) return;
+      const glue = document.createElement("div");
+      glue.className = "print-head";
+      h.before(glue);
+      glue.append(h, next);
+    });
+    const isBlockToGlue = (el) => el && !/^H[1-6]$/.test(el.tagName) && !el.classList.contains("print-sec") && !el.classList.contains("print-source");
+    // 「〜:」で終わる前置きの段落は，直後の表・リスト・コードと離さない
+    contentEl.querySelectorAll("p").forEach((p) => {
+      if (!/[：:]$/.test(p.textContent.trim())) return;
+      const parent = p.parentElement;
+      const target = parent.classList.contains("print-head") && parent.lastElementChild === p ? parent : p;
+      const next = target.nextElementSibling;
+      if (!isBlockToGlue(next)) return;
+      if (target === parent) {
+        parent.append(next);
+        return;
+      }
+      const glue = document.createElement("div");
+      glue.className = "print-head";
+      p.before(glue);
+      glue.append(p, next);
+    });
+    // 「例）」「→」「※」で始まる段落や，直前の文・手順を例示するコードは，前のかたまりと離さない
+    contentEl.querySelectorAll("p, pre").forEach((p) => {
+      const prev = p.previousElementSibling;
+      const follows =
+        p.tagName === "PRE"
+          ? prev && (/^(P|UL|OL)$/.test(prev.tagName) || prev.classList.contains("print-head"))
+          : /^(例[）)：:]|→|※)/.test(p.textContent.trim());
+      if (!follows || !isBlockToGlue(prev)) return;
+      if (prev.classList.contains("print-head")) {
+        prev.append(p);
+        return;
+      }
+      const glue = document.createElement("div");
+      glue.className = "print-head";
+      prev.before(glue);
+      glue.append(prev, p);
+    });
+
+    const root = document.documentElement;
+    root.classList.add("print-measure");
+    const fits = (el, ratio) => el.getBoundingClientRect().height <= PRINT_PAGE_H * ratio;
+    const keep = [];
+    contentEl.querySelectorAll(".print-sec").forEach((el) => fits(el, KEEP_SECTION) && keep.push(el));
+    contentEl
+      .querySelectorAll(".print-head, .table-wrap, pre, blockquote, .markdown-body > ul, .markdown-body > ol, .print-sec > ul, .print-sec > ol, .print-head > ul, .print-head > ol")
+      .forEach((el) => fits(el, KEEP_BLOCK) && keep.push(el));
+    root.classList.remove("print-measure");
+    keep.forEach((el) => el.classList.add("print-keep"));
+  }
+
+  function restorePrintLayout() {
+    if (!printPrepared) return;
+    printPrepared = false;
+    contentEl.querySelectorAll(".print-keep").forEach((el) => el.classList.remove("print-keep"));
+    contentEl.querySelectorAll(".print-sec, .print-head").forEach((wrap) => wrap.replaceWith(...wrap.childNodes));
+  }
+
   // ダークテーマのまま印刷すると黒地になるため，印刷中だけライトテーマにする（設定は保存しない）
   let themeBeforePrint = null;
   window.addEventListener("beforeprint", () => {
+    preparePrintLayout();
     if (document.documentElement.getAttribute("data-theme") !== "dark") return;
     themeBeforePrint = "dark";
     document.documentElement.setAttribute("data-theme", "light");
     hljsTheme.href = HLJS_LIGHT;
   });
   window.addEventListener("afterprint", () => {
+    restorePrintLayout();
     if (!themeBeforePrint) return;
     document.documentElement.setAttribute("data-theme", themeBeforePrint);
     hljsTheme.href = HLJS_DARK;

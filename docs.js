@@ -33,6 +33,7 @@ window.DOC_FILES = [
 
   doc("network/ip-address/subnet-cheatsheet.md", "サブネット計算チートシート", "サブネット計算の公式・早見表まとめ"),
   doc("network/ip-address/ipaddr.md", "サブネット計算の実例", "サブネットマスク計算の実例2パターン"),
+  doc("network/ip-address/ipv6.md", "IPv6 チートシート", "IPv6のアドレス・NDP・SLAAC/DHCPv6・移行技術まとめ"),
 
   doc("network/lan/ethernet-types.md", "イーサネット規格", "10BASE-T等イーサネット規格と伝送速度"),
   doc("network/lan/poe.md", "PoE", "PoE規格(802.3af/at/bt)と給電電力"),

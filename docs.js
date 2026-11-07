@@ -40,6 +40,7 @@ window.DOC_FILES = [
   doc("network/lan/ieee802x.md", "IEEE 802.X 規格一覧", "試験に頻出するIEEE802.X規格一覧"),
   doc("network/lan/lag-stp.md", "LAG・STP", "LAGとSTP(ポート役割/ステータス/RSTP/MSTP)"),
   doc("network/lan/vlan-vxlan.md", "VLAN・VXLAN", "802.1QタグVLANとVXLAN/VTEP/EVPN"),
+  doc("network/lan/vxlan.md", "VXLAN チートシート", "VXLANのヘッダ・MTU・Leaf-Spine・EVPN・ESIまとめ"),
   doc("network/lan/wifi.md", "無線LAN", "Wi-Fi規格・用語・変調/暗号化方式まとめ"),
 
   doc("network/wan-vpn/wan-vpn.md", "WAN・VPNの分類", "WAN/VPNの分類とインターネット経由の有無"),

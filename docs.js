@@ -50,6 +50,7 @@ window.DOC_FILES = [
 
   doc("network/routing/igp.md", "RIP・OSPF", "RIPとOSPFのしくみ・エリア・LSA"),
   doc("network/routing/bgp.md", "BGP", "BGPメッセージ・パスアトリビュート・AS番号"),
+  doc("network/routing/bgp-cheatsheet.md", "BGP チートシート", "iBGP/eBGP・最適経路の選択・経路制御・セキュリティまとめ"),
   doc("network/routing/reliability.md", "ECMP・BFD", "ECMPによる負荷分散とBFDの死活監視"),
   doc("network/routing/multicast.md", "マルチキャスト", "マルチキャストアドレス・PIM・IGMP"),
 

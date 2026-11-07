@@ -47,6 +47,7 @@ window.DOC_FILES = [
   doc("network/wan-vpn/mpls.md", "IP-VPN・MPLS", "IP-VPNを支えるMPLSのラベル転送と用語"),
   doc("network/wan-vpn/ipsec.md", "IPsec VPN", "IPsec(AH/ESP/IKE)・ESPモード・NATトラバーサル"),
   doc("network/wan-vpn/ppp.md", "PPP・PPPoE", "PPPの認証(PAP/CHAP)とPPPoEのフレーム構造"),
+  doc("network/wan-vpn/sd-wan.md", "SD-WAN チートシート", "SD-WANの構成・アプリ別経路制御・ローカルブレイクアウト・SASEまとめ"),
 
   doc("network/routing/igp.md", "RIP・OSPF", "RIPとOSPFのしくみ・エリア・LSA"),
   doc("network/routing/bgp.md", "BGP", "BGPメッセージ・パスアトリビュート・AS番号"),

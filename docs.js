@@ -31,29 +31,29 @@ window.DOC_FOLDER_LABELS = {
 window.DOC_FILES = [
   "README.md",
 
-  doc("network/ip-address/subnet-cheatsheet.md", "サブネット計算チートシート", "サブネット計算の公式・早見表まとめ"),
+  doc("network/ip-address/subnet-cheatsheet.md", "サブネット計算暗記シート", "サブネット計算の公式・早見表まとめ"),
   doc("network/ip-address/ipaddr.md", "サブネット計算の実例", "サブネットマスク計算の実例2パターン"),
-  doc("network/ip-address/ipv6.md", "IPv6 チートシート", "IPv6のアドレス・NDP・SLAAC/DHCPv6・移行技術まとめ"),
+  doc("network/ip-address/ipv6.md", "IPv6 暗記シート", "IPv6のアドレス・NDP・SLAAC/DHCPv6・移行技術まとめ"),
 
   doc("network/lan/ethernet-types.md", "イーサネット規格", "10BASE-T等イーサネット規格と伝送速度"),
   doc("network/lan/poe.md", "PoE", "PoE規格(802.3af/at/bt)と給電電力"),
   doc("network/lan/ieee802x.md", "IEEE 802.X 規格一覧", "試験に頻出するIEEE802.X規格一覧"),
   doc("network/lan/lag-stp.md", "LAG・STP", "LAGとSTP(ポート役割/ステータス/RSTP/MSTP)"),
   doc("network/lan/vlan-vxlan.md", "VLAN・VXLAN", "802.1QタグVLANとVXLAN/VTEP/EVPN"),
-  doc("network/lan/vxlan.md", "VXLAN チートシート", "VXLANのヘッダ・MTU・Leaf-Spine・EVPN・ESIまとめ"),
+  doc("network/lan/vxlan.md", "VXLAN 暗記シート", "VXLANのヘッダ・MTU・Leaf-Spine・EVPN・ESIまとめ"),
   doc("network/lan/wifi.md", "無線LAN", "Wi-Fi規格・用語・変調/暗号化方式まとめ"),
-  doc("network/lan/wifi-cheatsheet.md", "無線LAN チートシート", "規格・チャネル/DFS・CSMA/CA・WPA3/802.1X・WLC・ローミングまとめ"),
+  doc("network/lan/wifi-cheatsheet.md", "無線LAN 暗記シート", "規格・チャネル/DFS・CSMA/CA・WPA3/802.1X・WLC・ローミングまとめ"),
 
   doc("network/wan-vpn/wan-vpn.md", "WAN・VPNの分類", "WAN/VPNの分類とインターネット経由の有無"),
   doc("network/wan-vpn/mpls.md", "IP-VPN・MPLS", "IP-VPNを支えるMPLSのラベル転送と用語"),
   doc("network/wan-vpn/ipsec.md", "IPsec VPN", "IPsec(AH/ESP/IKE)・ESPモード・NATトラバーサル"),
   doc("network/wan-vpn/ppp.md", "PPP・PPPoE", "PPPの認証(PAP/CHAP)とPPPoEのフレーム構造"),
-  doc("network/wan-vpn/sd-wan.md", "SD-WAN チートシート", "SD-WANの構成・アプリ別経路制御・ローカルブレイクアウト・SASEまとめ"),
+  doc("network/wan-vpn/sd-wan.md", "SD-WAN 暗記シート", "SD-WANの構成・アプリ別経路制御・ローカルブレイクアウト・SASEまとめ"),
 
   doc("network/routing/igp.md", "RIP・OSPF", "RIPとOSPFのしくみ・エリア・LSA"),
-  doc("network/routing/ospf.md", "OSPF チートシート", "OSPFのコスト・ネイバー・DR/BDR・エリア・LSA・集約まとめ"),
+  doc("network/routing/ospf.md", "OSPF 暗記シート", "OSPFのコスト・ネイバー・DR/BDR・エリア・LSA・集約まとめ"),
   doc("network/routing/bgp.md", "BGP", "BGPメッセージ・パスアトリビュート・AS番号"),
-  doc("network/routing/bgp-cheatsheet.md", "BGP チートシート", "iBGP/eBGP・最適経路の選択・経路制御・セキュリティまとめ"),
+  doc("network/routing/bgp-cheatsheet.md", "BGP 暗記シート", "iBGP/eBGP・最適経路の選択・経路制御・セキュリティまとめ"),
   doc("network/routing/reliability.md", "ECMP・BFD", "ECMPによる負荷分散とBFDの死活監視"),
   doc("network/routing/multicast.md", "マルチキャスト", "マルチキャストアドレス・PIM・IGMP"),
 

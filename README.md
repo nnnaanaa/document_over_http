@@ -23,7 +23,7 @@
      {
        path: "subnet-cheatsheet.md",
        url: "https://raw.githubusercontent.com/<owner>/<repo>/<branch>/subnet-cheatsheet.md",
-       title: "サブネット計算チートシート",
+       title: "サブネット計算暗記シート",
        summary: "サブネット計算の公式・早見表まとめ",
      },
    ];

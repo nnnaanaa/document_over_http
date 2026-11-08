@@ -42,6 +42,7 @@ window.DOC_FILES = [
   doc("network/lan/vlan-vxlan.md", "VLAN・VXLAN", "802.1QタグVLANとVXLAN/VTEP/EVPN"),
   doc("network/lan/vxlan.md", "VXLAN チートシート", "VXLANのヘッダ・MTU・Leaf-Spine・EVPN・ESIまとめ"),
   doc("network/lan/wifi.md", "無線LAN", "Wi-Fi規格・用語・変調/暗号化方式まとめ"),
+  doc("network/lan/wifi-cheatsheet.md", "無線LAN チートシート", "規格・チャネル/DFS・CSMA/CA・WPA3/802.1X・WLC・ローミングまとめ"),
 
   doc("network/wan-vpn/wan-vpn.md", "WAN・VPNの分類", "WAN/VPNの分類とインターネット経由の有無"),
   doc("network/wan-vpn/mpls.md", "IP-VPN・MPLS", "IP-VPNを支えるMPLSのラベル転送と用語"),
@@ -50,6 +51,7 @@ window.DOC_FILES = [
   doc("network/wan-vpn/sd-wan.md", "SD-WAN チートシート", "SD-WANの構成・アプリ別経路制御・ローカルブレイクアウト・SASEまとめ"),
 
   doc("network/routing/igp.md", "RIP・OSPF", "RIPとOSPFのしくみ・エリア・LSA"),
+  doc("network/routing/ospf.md", "OSPF チートシート", "OSPFのコスト・ネイバー・DR/BDR・エリア・LSA・集約まとめ"),
   doc("network/routing/bgp.md", "BGP", "BGPメッセージ・パスアトリビュート・AS番号"),
   doc("network/routing/bgp-cheatsheet.md", "BGP チートシート", "iBGP/eBGP・最適経路の選択・経路制御・セキュリティまとめ"),
   doc("network/routing/reliability.md", "ECMP・BFD", "ECMPによる負荷分散とBFDの死活監視"),

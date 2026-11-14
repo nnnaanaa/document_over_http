@@ -9,7 +9,7 @@
   --accent: #6246ea;
   --accent-hover: #4b30d1;
   --accent-soft: #efebff;
-  --marker: #fdeb9e;
+  --marker: #cfe8ff;
   --code-bg: #f2f3f6;
   --sidebar-bg: #fafafb;
   --active-bg: #f0edff;
@@ -36,7 +36,7 @@
   --accent: #a893ff;
   --accent-hover: #c6b9ff;
   --accent-soft: #231e38;
-  --marker: #5b4a12;
+  --marker: #1f3b5c;
   --code-bg: #1d2027;
   --sidebar-bg: #121419;
   --active-bg: #221d36;
@@ -1407,7 +1407,7 @@ html.print-measure .markdown-body pre { overflow: visible; white-space: pre-wrap
     --border-strong: #d4d7de;
     --accent: #6246ea;
     --accent-soft: #efebff;
-    --marker: #fdeb9e;
+    --marker: #cfe8ff;
     --code-bg: #f2f3f6;
     --sidebar-bg: #fafafb;
     --th-bg: #f6f5fb;

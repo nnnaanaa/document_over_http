@@ -543,6 +543,59 @@
   }
   window.fixCjkEmphasis = fixCjkEmphasis;
 
+  // ---- 図（```mermaid のコードブロック）----
+  // mermaid は大きいので、図のある資料を開いたときだけ読み込む
+  const MERMAID_URL = "https://cdnjs.cloudflare.com/ajax/libs/mermaid/11.6.0/mermaid.min.js";
+  let mermaidLoading = null;
+  function loadMermaid() {
+    if (window.mermaid) return Promise.resolve(window.mermaid);
+    if (!mermaidLoading) {
+      mermaidLoading = new Promise((resolve, reject) => {
+        const script = document.createElement("script");
+        script.src = MERMAID_URL;
+        script.onload = () => {
+          // ダークテーマでも図は白地のカードに描く（印刷でもそのまま使える）
+          window.mermaid.initialize({ startOnLoad: false, theme: "neutral", securityLevel: "strict" });
+          resolve(window.mermaid);
+        };
+        script.onerror = () => {
+          mermaidLoading = null;
+          reject(new Error("mermaid を読み込めませんでした"));
+        };
+        document.head.appendChild(script);
+      });
+    }
+    return mermaidLoading;
+  }
+
+  // コードブロックを図の枠に置き換えてから描画する（置き換えは同期で行うので、直後のシンタックスハイライトの対象にならない）
+  async function renderMermaid(root) {
+    const codes = [...root.querySelectorAll("pre > code.language-mermaid")];
+    if (!codes.length) return;
+    const nodes = codes.map((code) => {
+      const div = document.createElement("div");
+      div.className = "mermaid-diagram";
+      div.textContent = code.textContent;
+      code.parentElement.replaceWith(div);
+      return div;
+    });
+    try {
+      const mermaid = await loadMermaid();
+      await mermaid.run({ nodes });
+    } catch {
+      // 描画できなければ、図の元になったテキストをそのまま見せる
+      nodes.forEach((div) => {
+        if (div.querySelector("svg")) return;
+        const pre = document.createElement("pre");
+        const code = document.createElement("code");
+        code.textContent = div.textContent;
+        pre.appendChild(code);
+        div.replaceWith(pre);
+      });
+    }
+  }
+  window.renderMermaid = renderMermaid;
+
   // md の「# ファイル名.md」を外して「## 見出し」をページタイトルに昇格し、パンくずと概要を添える
   function decorateDocument(meta) {
     const first = contentEl.firstElementChild;
@@ -698,7 +751,7 @@
     const keep = [];
     contentEl.querySelectorAll(".print-sec").forEach((el) => fits(el, KEEP_SECTION) && keep.push(el));
     contentEl
-      .querySelectorAll(".print-head, .table-wrap, pre, blockquote, .markdown-body > ul, .markdown-body > ol, .print-sec > ul, .print-sec > ol, .print-head > ul, .print-head > ol")
+      .querySelectorAll(".print-head, .table-wrap, pre, .mermaid-diagram, blockquote, .markdown-body > ul, .markdown-body > ol, .print-sec > ul, .print-sec > ol, .print-head > ul, .print-head > ol")
       .forEach((el) => fits(el, KEEP_BLOCK) && keep.push(el));
     root.classList.remove("print-measure");
     keep.forEach((el) => el.classList.add("print-keep"));
@@ -853,6 +906,7 @@
       const safeHtml = window.DOMPurify ? DOMPurify.sanitize(rawHtml) : rawHtml;
       contentEl.innerHTML = safeHtml;
       fixCjkEmphasis(contentEl);
+      renderMermaid(contentEl);
       decorateDocument(meta);
       appendQuizCta(path);
       addPrintTools();

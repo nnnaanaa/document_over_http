@@ -282,6 +282,7 @@
     const html = marked.parse(md);
     box.innerHTML = window.DOMPurify ? DOMPurify.sanitize(html) : html;
     if (window.fixCjkEmphasis) window.fixCjkEmphasis(box);
+    if (window.renderMermaid) window.renderMermaid(box);
     const first = box.firstElementChild;
     if (first && first.tagName === "H1" && /\.md$/i.test(first.textContent.trim())) first.remove();
     box.querySelectorAll("table").forEach((t) => {

@@ -461,6 +461,20 @@ a:hover { color: var(--accent-hover); }
 }
 .markdown-body blockquote > :last-child { margin-bottom: 0; }
 
+/* 図（mermaid）。ダークテーマでも白地のカードにする */
+.markdown-body .mermaid-diagram {
+  margin: 0.5rem 0 1.75rem;
+  padding: 1rem;
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  background: #fff;
+  overflow-x: auto;
+  text-align: center;
+  line-height: 1.4;
+}
+.markdown-body .mermaid-diagram:not([data-processed]) { color: transparent; min-height: 4rem; } /* 描画前の元テキストを見せない */
+.markdown-body .mermaid-diagram svg { max-width: 100%; height: auto; }
+
 .table-wrap {
   margin: 0.5rem 0 1.75rem;
   overflow-x: auto;

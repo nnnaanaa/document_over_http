@@ -499,6 +499,50 @@
     headings.forEach((h) => tocObserver.observe(h));
   }
 
+  // marked（CommonMark）は「**語（補足）**を」のように、閉じる ** の直前が記号で直後が日本語だと太字にしない。
+  // 太字にならずに文字のまま残った ** の組を <strong> に置き換える（コードの中は対象外）
+  function fixCjkEmphasis(root) {
+    const blocks = root.querySelectorAll("p, li, td, th, h1, h2, h3, h4, h5, h6, blockquote");
+    blocks.forEach((block) => {
+      // 1つのテキストの中で閉じている組
+      [...block.childNodes].forEach((node) => {
+        if (node.nodeType !== Node.TEXT_NODE || !node.nodeValue.includes("**")) return;
+        const parts = node.nodeValue.split(/\*\*([^*\n]+?)\*\*/);
+        if (parts.length < 3) return;
+        const frag = document.createDocumentFragment();
+        parts.forEach((s, i) => {
+          if (i % 2) {
+            const strong = document.createElement("strong");
+            strong.textContent = s;
+            frag.append(strong);
+          } else if (s) {
+            frag.append(s);
+          }
+        });
+        node.replaceWith(frag);
+      });
+      // 間にコードなどを挟んで、別々のテキストにまたがっている組
+      for (;;) {
+        const texts = [...block.childNodes].filter((n) => n.nodeType === Node.TEXT_NODE && n.nodeValue.includes("**"));
+        if (texts.length < 2) break;
+        const [open, close] = texts;
+        const startNode = open.splitText(open.nodeValue.indexOf("**"));
+        startNode.nodeValue = startNode.nodeValue.slice(2);
+        const after = close.splitText(close.nodeValue.indexOf("**"));
+        after.nodeValue = after.nodeValue.slice(2);
+        const strong = document.createElement("strong");
+        startNode.before(strong);
+        let n = startNode;
+        while (n && n !== after) {
+          const next = n.nextSibling;
+          strong.append(n);
+          n = next;
+        }
+      }
+    });
+  }
+  window.fixCjkEmphasis = fixCjkEmphasis;
+
   // md の「# ファイル名.md」を外して「## 見出し」をページタイトルに昇格し、パンくずと概要を添える
   function decorateDocument(meta) {
     const first = contentEl.firstElementChild;
@@ -808,6 +852,7 @@
       const rawHtml = marked.parse(md);
       const safeHtml = window.DOMPurify ? DOMPurify.sanitize(rawHtml) : rawHtml;
       contentEl.innerHTML = safeHtml;
+      fixCjkEmphasis(contentEl);
       decorateDocument(meta);
       appendQuizCta(path);
       addPrintTools();
